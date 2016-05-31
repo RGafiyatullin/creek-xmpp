@@ -26,7 +26,7 @@ private[input_stream] object InputStreamState {
         if qn(ns, localName) == XmppConstants.names.streams.stream
       =>
         val event = InputStreamEvent.StreamOpen(streamAttributes)
-        ExpectStanza(event)
+        ExpectStanza(Some(event))
 
       case HighLevelEvent.ElementClose(_, _, localName, ns)
         if qn(ns, localName) == XmppConstants.names.streams.stream
@@ -41,16 +41,24 @@ private[input_stream] object InputStreamState {
 
 
   case class ExpectStanza(
-                           event: InputStreamEvent
+                           override val eventOption: Option[InputStreamEvent]
                          ) extends InputStreamState
   {
-    override def eventOption: Option[InputStreamEvent] = Some(event)
-
     override def handleEvent: PartialFunction[HighLevelEvent, InputStreamState] = {
+      case HighLevelEvent.Whitespace(_, _) =>
+        copy(eventOption = None)
+
       case HighLevelEvent.ElementOpen(_, _, localName, ns, _)
         if qn(ns, localName) == XmppConstants.names.streams.stream
       =>
         LocalError(XmppStreamError.InvalidXml())
+
+      case selfClosing: HighLevelEvent.ElementSelfClosing =>
+        val stanza = NodeBuilder
+          .empty.in(selfClosing)
+          .nodeOption.get.asInstanceOf[Element]
+
+        ExpectStanza(Some(InputStreamEvent.Stanza(stanza)))
 
       case elementOpen: HighLevelEvent.ElementOpen =>
         val builder = NodeBuilder.empty.in(elementOpen)
@@ -79,7 +87,7 @@ private[input_stream] object InputStreamState {
 
           case Some(stanza: Element) =>
             val event = InputStreamEvent.Stanza(stanza)
-            ExpectStanza(event)
+            ExpectStanza(Some(event))
 
           case Some(nonElement) =>
             LocalError(XmppStreamError.InvalidXml())

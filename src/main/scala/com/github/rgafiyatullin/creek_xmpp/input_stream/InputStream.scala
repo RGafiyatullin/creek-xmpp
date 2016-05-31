@@ -5,6 +5,8 @@ import com.github.rgafiyatullin.creek_xml.stream_parser.low_level_parser.LowLeve
 import com.github.rgafiyatullin.creek_xml.stream_parser.tokenizer.TokenizerError
 import com.github.rgafiyatullin.creek_xmpp.protocol.stream_error.XmppStreamError
 
+import scala.annotation.tailrec
+
 case class InputStream(state: InputStreamState, parser: HighLevelParser) {
   def in(char: Char): InputStream =
     copy(parser = parser.in(char))
@@ -12,22 +14,37 @@ case class InputStream(state: InputStreamState, parser: HighLevelParser) {
   def in(string: String): InputStream =
     copy(parser = parser.in(string))
 
-  def out: (Option[InputStreamEvent], InputStream) = {
-    try {
-      val (parserEvent, nextParser) = parser.out
-      val nextState = state.handleEvent.applyOrElse(parserEvent, unexpectedParserEvent _)
-      (nextState.eventOption, copy(state = nextState, parser = nextParser))
+  @tailrec
+  final def out: (Option[InputStreamEvent], InputStream) = {
+    getNextParserEvent(parser) match {
+      case Right(nextParser) =>
+        (None, copy(parser = nextParser))
+
+      case Left((hle, nextParser)) =>
+        val nextState = state.handleEvent.applyOrElse(hle, unexpectedParserEvent _)
+        val nextStream = copy(state = nextState, parser = nextParser)
+        nextState.eventOption match {
+          case None =>
+            nextStream.out
+
+          case Some(streamEvent) =>
+            (Some(streamEvent), nextStream)
+        }
     }
+  }
+
+  private def getNextParserEvent(parser0: HighLevelParser): Either[(HighLevelEvent, HighLevelParser), HighLevelParser] =
+    try Left(parser0.out)
     catch {
       case HighLevelParserError.LowLevel(
-        nextParser,
+        parser1,
         LowLevelParserError.TokError(
           _, TokenizerError.InputBufferUnderrun(_)))
       =>
-        (None, copy(parser = nextParser))
+        Right(parser1)
     }
 
-  }
+
 
   private def unexpectedParserEvent(highLevelEvent: HighLevelEvent) =
     InputStreamState.LocalError(XmppStreamError.InternalServerError())
