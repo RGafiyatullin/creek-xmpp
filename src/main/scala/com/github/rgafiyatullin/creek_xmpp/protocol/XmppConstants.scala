@@ -1,6 +1,6 @@
 package com.github.rgafiyatullin.creek_xmpp.protocol
 
-import javax.xml.namespace.QName
+import com.github.rgafiyatullin.creek_xml.common.QName
 
 object XmppConstants {
   object names {

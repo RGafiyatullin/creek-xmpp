@@ -1,4 +1,4 @@
-package com.github.rgafiyatullin.creek_xmpp.input_stream
+package com.github.rgafiyatullin.creek_xmpp.streams
 
 import com.github.rgafiyatullin.creek_xml.common.Attribute
 import com.github.rgafiyatullin.creek_xml.dom.Element
@@ -16,7 +16,7 @@ class InputStreamSpec extends FlatSpec with Matchers {
     val is0 = InputStream.empty.in(
       "<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>")
     val (event, is1) = is0.out
-    event should be (Some(InputStreamEvent.StreamOpen(Seq(
+    event should be (Some(StreamEvent.StreamOpen(Seq(
       Attribute.NsImport("", "jabber:client"),
       Attribute.NsImport("stream", "http://etherx.jabber.org/streams")
     ))))
@@ -29,20 +29,20 @@ class InputStreamSpec extends FlatSpec with Matchers {
         |<presence/>
       """.stripMargin)
     val (streamOpen, is1) = is0.out
-    streamOpen should be (Some(InputStreamEvent.StreamOpen(Seq(
+    streamOpen should be (Some(StreamEvent.StreamOpen(Seq(
       Attribute.NsImport("", "jabber:client"),
       Attribute.NsImport("stream", "http://etherx.jabber.org/streams")
     ))))
     val (stanzaStreamFeatures, is2) = is1.out
     stanzaStreamFeatures should be (Some(
-        InputStreamEvent.Stanza(
+        StreamEvent.Stanza(
           Element(
             XmppConstants.names.streams.ns,
             "features",
             Seq(), Seq()))))
     val (stanzaPresence, is3) = is2.out
     stanzaPresence should be (Some(
-      InputStreamEvent.Stanza(
+      StreamEvent.Stanza(
         Element(
           XmppConstants.names.jabberClient.ns,
           "presence",
@@ -57,11 +57,25 @@ class InputStreamSpec extends FlatSpec with Matchers {
         |<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
       """.stripMargin)
     val (streamOpen, is1) = is0.out
-    streamOpen should be (Some(InputStreamEvent.StreamOpen(Seq(
+    streamOpen should be (Some(StreamEvent.StreamOpen(Seq(
       Attribute.NsImport("", "jabber:client"),
       Attribute.NsImport("stream", "http://etherx.jabber.org/streams")
     ))))
   val (localErrorInvalidXml, is2) = is1.out
-    localErrorInvalidXml should be (Some(InputStreamEvent.LocalError(XmppStreamError.InvalidXml())))
+    localErrorInvalidXml should be (Some(StreamEvent.LocalError(XmppStreamError.InvalidXml())))
+  }
+
+  it should "result in stream-open and stream-closed events" in {
+    val is0 = InputStream.empty.in(
+      """<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+        |</stream:stream>
+      """.stripMargin)
+    val (streamOpen, is1) = is0.out
+    streamOpen should be (Some(StreamEvent.StreamOpen(Seq(
+      Attribute.NsImport("", "jabber:client"),
+      Attribute.NsImport("stream", "http://etherx.jabber.org/streams")
+    ))))
+    val (streamClosed, is2) = is1.out
+    streamClosed should be (Some(StreamEvent.StreamClose()))
   }
 }

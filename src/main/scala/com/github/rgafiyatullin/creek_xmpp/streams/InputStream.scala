@@ -1,11 +1,20 @@
-package com.github.rgafiyatullin.creek_xmpp.input_stream
+package com.github.rgafiyatullin.creek_xmpp.streams
 
-import com.github.rgafiyatullin.creek_xml.stream_parser.high_level_parser.{HighLevelEvent, HighLevelParser, HighLevelParserError}
+import com.github.rgafiyatullin.creek_xml.common.HighLevelEvent
+import com.github.rgafiyatullin.creek_xml.stream_parser.high_level_parser.{HighLevelParser, HighLevelParserError}
 import com.github.rgafiyatullin.creek_xml.stream_parser.low_level_parser.LowLevelParserError
 import com.github.rgafiyatullin.creek_xml.stream_parser.tokenizer.TokenizerError
 import com.github.rgafiyatullin.creek_xmpp.protocol.stream_error.XmppStreamError
 
 import scala.annotation.tailrec
+
+object InputStream {
+  def empty: InputStream =
+    InputStream(
+      InputStreamState.ExpectStreamOpen(None),
+      HighLevelParser.empty.withoutPosition)
+}
+
 
 case class InputStream(state: InputStreamState, parser: HighLevelParser) {
   def in(char: Char): InputStream =
@@ -15,7 +24,7 @@ case class InputStream(state: InputStreamState, parser: HighLevelParser) {
     copy(parser = parser.in(string))
 
   @tailrec
-  final def out: (Option[InputStreamEvent], InputStream) = {
+  final def out: (Option[StreamEvent], InputStream) = {
     getNextParserEvent(parser) match {
       case Right(nextParser) =>
         (None, copy(parser = nextParser))
@@ -51,10 +60,4 @@ case class InputStream(state: InputStreamState, parser: HighLevelParser) {
 
 }
 
-object InputStream {
-  def empty: InputStream =
-    InputStream(
-      InputStreamState.ExpectStreamOpen(None),
-      HighLevelParser.empty.withoutPosition)
-}
 
