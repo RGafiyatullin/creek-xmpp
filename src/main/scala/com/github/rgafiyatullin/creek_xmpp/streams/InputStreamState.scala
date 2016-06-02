@@ -66,6 +66,9 @@ private[streams] object InputStreamState {
         if qn(ns, localName) == XmppConstants.names.streams.stream
       =>
         StreamClosed(StreamEvent.StreamClose())
+
+      case hle: HighLevelEvent =>
+        LocalError(XmppStreamError.InvalidXml())
     }
   }
 

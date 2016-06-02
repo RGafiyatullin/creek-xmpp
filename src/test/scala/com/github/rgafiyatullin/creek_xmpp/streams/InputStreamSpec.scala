@@ -1,6 +1,6 @@
 package com.github.rgafiyatullin.creek_xmpp.streams
 
-import com.github.rgafiyatullin.creek_xml.common.Attribute
+import com.github.rgafiyatullin.creek_xml.common.{Attribute, QName}
 import com.github.rgafiyatullin.creek_xml.dom.Element
 import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
 import com.github.rgafiyatullin.creek_xmpp.protocol.stream_error.XmppStreamError
@@ -25,7 +25,9 @@ class InputStreamSpec extends FlatSpec with Matchers {
   "An open stream" should "trigger stanza-events" in {
     val is0 = InputStream.empty.in(
       """<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
-        |<stream:features/>
+        |<stream:features>
+        |<feature xmlns='test'/>
+        |</stream:features>
         |<presence/>
       """.stripMargin)
     val (streamOpen, is1) = is0.out
@@ -37,15 +39,15 @@ class InputStreamSpec extends FlatSpec with Matchers {
     stanzaStreamFeatures should be (Some(
         StreamEvent.Stanza(
           Element(
-            XmppConstants.names.streams.ns,
-            "features",
-            Seq(), Seq()))))
+            XmppConstants.names.streams.features,
+            Seq(), Seq(
+              Element(QName("test", "feature"), Seq(), Seq())
+            )))))
     val (stanzaPresence, is3) = is2.out
     stanzaPresence should be (Some(
       StreamEvent.Stanza(
         Element(
-          XmppConstants.names.jabberClient.ns,
-          "presence",
+          XmppConstants.names.jabberClient.presence,
           Seq(), Seq()))))
     val (none, is4) = is3.out
     none should be (None)
@@ -77,5 +79,25 @@ class InputStreamSpec extends FlatSpec with Matchers {
     ))))
     val (streamClosed, is2) = is1.out
     streamClosed should be (Some(StreamEvent.StreamClose()))
+  }
+
+  it should "result in local-error upon receiving non-stream open when ExpectStreamOpen" in {
+    val is0 = InputStream.empty.in("<stanza xmlns='jabber:client' />")
+    val (localError, is1) = is0.out
+    localError should be (Some(StreamEvent.LocalError(XmppStreamError.InvalidXml())))
+  }
+
+  it should "result in local-error upon receiving CData on stanza-level" in {
+    val is0 = InputStream.empty.in(
+      """<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>
+        |<![CDATA[cdata]]>
+      """.stripMargin)
+    val (streamOpen, is1) = is0.out
+    streamOpen should be (Some(StreamEvent.StreamOpen(Seq(
+      Attribute.NsImport("", "jabber:client"),
+      Attribute.NsImport("stream", "http://etherx.jabber.org/streams")
+    ))))
+    val (localError, is2) = is1.out
+    localError should be (Some(StreamEvent.LocalError(XmppStreamError.InvalidXml())))
   }
 }

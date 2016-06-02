@@ -1,8 +1,10 @@
 package com.github.rgafiyatullin.creek_xmpp.protocol.stanzas.jabber_client
 
-import com.github.rgafiyatullin.creek_xml.common.{Attribute, HighLevelEvent}
+import com.github.rgafiyatullin.creek_xml.common.{Attribute, HighLevelEvent, QName}
 import com.github.rgafiyatullin.creek_xml.dom.{Element, NodeBuilder}
 import com.github.rgafiyatullin.creek_xml.stream_parser.high_level_parser.HighLevelParser
+import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
+import com.github.rgafiyatullin.creek_xmpp.protocol.jid.Jid
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.collection.immutable.Queue
@@ -20,8 +22,8 @@ class IQSpec extends FlatSpec with Matchers with XmlFromStringHelper {
   }
 
   "IQ.fromXml" should "return Some(iq)" in {
-    IQ.fromXml(xml("<iq xmlns='jabber:client' type='result' id='test' />")) should be (Some(IQ(Element("jabber:client", "iq", Seq(
-      Attribute.NsImport("", "jabber:client"),
+    IQ.fromXml(xml("<iq xmlns='jabber:client' type='result' id='test' />")) should be (Some(IQ(Element(XmppConstants.names.jabberClient.iq, Seq(
+      Attribute.NsImport("", XmppConstants.names.jabberClient.ns),
       Attribute.Unprefixed("type", "result"),
       Attribute.Unprefixed("id", "test")
     ), Seq()))))
@@ -33,5 +35,30 @@ class IQSpec extends FlatSpec with Matchers with XmlFromStringHelper {
 
   it should "return None upon non-IQ type-attribute value" in {
     IQ.fromXml(xml("<iq xmlns='jabber:client' type='invalid' id='test' />")) should be (None)
+  }
+
+  "IQ.create" should "#1" in {
+    val iq = IQ.create(iqType = IQ.Get)
+    iq.stanzaTypeOption should be (Some(IQ.Get))
+    iq.from should be (None)
+    iq.to should be (None)
+    iq.children should be (Seq())
+  }
+
+  it should "#2" in {
+    val j1 = Jid.parse("a@im.localhost/desktop")
+    val j2 = Jid.parse("b@im.localhost/laptop")
+    val testXml = Element(QName("x", "x"), Seq(), Seq())
+
+    val iq = IQ.create(
+      iqType = IQ.Set,
+      to = Some(j1),
+      from = Some(j2),
+      children = Seq(testXml))
+
+    iq.stanzaTypeOption should be (Some(IQ.Set))
+    iq.to should be (Some(j1))
+    iq.from should be (Some(j2))
+    iq.children should be (Seq(testXml))
   }
 }

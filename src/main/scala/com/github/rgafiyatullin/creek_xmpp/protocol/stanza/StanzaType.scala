@@ -4,7 +4,7 @@ trait StanzaType[T] extends Stanza {
   def stanzaTypeFromString: PartialFunction[Option[String], T]
 
   def stanzaTypeOption: Option[T] =
-    stanzaTypeFromString.lift.apply(xml.attribute("xml"))
+    stanzaTypeFromString.lift.apply(xml.attribute("type"))
 }
 
 trait StanzaTypeWithDefault[T] extends StanzaType[T] {
@@ -13,6 +13,6 @@ trait StanzaTypeWithDefault[T] extends StanzaType[T] {
   def stanzaType: T =
     stanzaTypeFromString
       .applyOrElse(
-        xml.attribute("xml"),
+        xml.attribute("type"),
         { _: Option[String] => defaultStanzaType })
 }
