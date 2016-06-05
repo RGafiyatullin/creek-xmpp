@@ -22,6 +22,32 @@ class InputStreamSpec extends FlatSpec with Matchers {
     ))))
   }
 
+  it should "return StreamOpen event when there are newlines inside openning tag" in {
+    val is0 = InputStream.empty.in(
+      "<stream:stream\n\txmlns='jabber:client'\n   xmlns:stream='http://etherx.jabber.org/streams'>")
+    val (event, is1) = is0.out
+    event should be (Some(StreamEvent.StreamOpen(Seq(
+      Attribute.NsImport("", "jabber:client"),
+      Attribute.NsImport("stream", "http://etherx.jabber.org/streams")
+    ))))
+  }
+
+  it should "return StreamOpen event when fed in two pieces" in {
+    val piece1 = "<stream:stream xmlns='jabber:"
+    val piece2 = "client' xmlns:stream='http://etherx.jabber.org/streams'>"
+
+    val is0 = InputStream.empty.in(piece1)
+    val (none, is1) = is0.out
+    none should be (None)
+
+    val is2 = is1.in(piece2)
+    val (some, is3) = is2.out
+    some should be (Some(StreamEvent.StreamOpen(Seq(
+      Attribute.NsImport("", "jabber:client"),
+      Attribute.NsImport("stream", "http://etherx.jabber.org/streams")
+    ))))
+  }
+
   "An open stream" should "trigger stanza-events" in {
     val is0 = InputStream.empty.in(
       """<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams'>

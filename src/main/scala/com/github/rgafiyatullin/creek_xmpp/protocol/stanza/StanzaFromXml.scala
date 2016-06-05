@@ -20,4 +20,7 @@ trait StanzaFromXml[StanzaType <: Stanza] {
   }
 
   def fromXml(xml: Element): Option[StanzaType]
+
+  def checkXml(xml: Element): Boolean =
+    fromXml(xml).isDefined
 }
