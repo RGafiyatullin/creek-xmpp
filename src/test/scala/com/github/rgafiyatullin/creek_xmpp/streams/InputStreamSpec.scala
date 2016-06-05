@@ -126,4 +126,17 @@ class InputStreamSpec extends FlatSpec with Matchers {
     val (localError, is2) = is1.out
     localError should be (Some(StreamEvent.LocalError(XmppStreamError.InvalidXml())))
   }
+
+  it should "successfully parse <?xml version='1.0'>" in {
+    val is0 = InputStream.empty.in(
+      """<?xml version='1.0'?><streams:stream xmlns:streams='http://etherx.jabber.org/streams' xmlns='jabber:client'>
+        |<streams:features><router xmlns='http://wargaming.net/xmpp/router-service'/></streams:features>
+        |<iq id='register-ruleset' type='error'><error><service-unavailable xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/></error></iq>
+      """.stripMargin)
+    val (streamOpen, is1) = is0.out
+    streamOpen should be (Some(StreamEvent.StreamOpen(Seq(
+      Attribute.NsImport("streams", "http://etherx.jabber.org/streams"),
+      Attribute.NsImport("", "jabber:client")
+    ))))
+  }
 }

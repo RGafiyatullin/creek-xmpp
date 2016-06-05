@@ -26,6 +26,9 @@ private[streams] object InputStreamState {
         val event = StreamEvent.StreamOpen(streamAttributes)
         ExpectStanza(Some(event))
 
+      case HighLevelEvent.ProcessingInstrutcion(_, "xml", _) =>
+        ExpectStreamOpen(None)
+
 //      case HighLevelEvent.ElementClose(_, _, localName, ns)
 //        if qn(ns, localName) == XmppConstants.names.streams.stream
 //      =>
