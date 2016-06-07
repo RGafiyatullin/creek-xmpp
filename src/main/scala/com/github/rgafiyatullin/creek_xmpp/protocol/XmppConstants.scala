@@ -14,18 +14,27 @@ object XmppConstants {
       val error = qn(ns, "error")
     }
 
-    object jabberClient {
-      val ns = "jabber:client"
+    object jabber {
+      object client {
+        val ns = "jabber:client"
 
-      val error = qn(ns, "error")
-      val presence = qn(ns, "presence")
-      val iq = qn(ns, "iq")
-      val message = qn(ns, "message")
+        val error = qn(ns, "error")
+        val presence = qn(ns, "presence")
+        val iq = qn(ns, "iq")
+        val message = qn(ns, "message")
+      }
     }
 
-    object urnIetfParamsXmlNsXmppStanzas {
-      val ns = "urn:ietf:params:xml:ns:xmpp-stanzas"
+    object urn {
+      object ietf {
+        object params {
+          object xmlNs {
+            object xmppStanzas {
+              val ns = "urn:ietf:params:xml:ns:xmpp-stanzas"
+            }
+          }
+        }
+      }
     }
-
   }
 }

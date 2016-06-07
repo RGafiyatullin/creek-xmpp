@@ -22,8 +22,8 @@ class IQSpec extends FlatSpec with Matchers with XmlFromStringHelper {
   }
 
   "IQ.fromXml" should "return Some(iq)" in {
-    IQ.fromXml(xml("<iq xmlns='jabber:client' type='result' id='test' />")) should be (Some(IQ(Element(XmppConstants.names.jabberClient.iq, Seq(
-      Attribute.NsImport("", XmppConstants.names.jabberClient.ns),
+    IQ.fromXml(xml("<iq xmlns='jabber:client' type='result' id='test' />")) should be (Some(IQ(Element(XmppConstants.names.jabber.client.iq, Seq(
+      Attribute.NsImport("", XmppConstants.names.jabber.client.ns),
       Attribute.Unprefixed("type", "result"),
       Attribute.Unprefixed("id", "test")
     ), Seq()))))

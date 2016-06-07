@@ -14,13 +14,13 @@ sealed trait XmppStanzaError extends Throwable {
 
   def toXml: Element =
     Element(
-      XmppConstants.names.jabberClient.error,
+      XmppConstants.names.jabber.client.error,
       Seq(
         Attribute.Unprefixed("type", errorType.toString)
       ),
       Seq(
         Element(
-          QName(XmppConstants.names.urnIetfParamsXmlNsXmppStanzas.ns, definedCondition),
+          QName(XmppConstants.names.urn.ietf.params.xmlNs.xmppStanzas.ns, definedCondition),
           Seq(), Seq())))
 }
 

@@ -20,8 +20,8 @@ class MessageSpec extends FlatSpec with Matchers with XmlFromStringHelper {
   }
 
   "Message.fromXml" should "return Some(message)" in {
-    Message.fromXml(xml("<message xmlns='jabber:client' type='groupchat' id='test' />")) should be (Some(Message(Element(XmppConstants.names.jabberClient.message, Seq(
-      Attribute.NsImport("", XmppConstants.names.jabberClient.ns),
+    Message.fromXml(xml("<message xmlns='jabber:client' type='groupchat' id='test' />")) should be (Some(Message(Element(XmppConstants.names.jabber.client.message, Seq(
+      Attribute.NsImport("", XmppConstants.names.jabber.client.ns),
       Attribute.Unprefixed("type", "groupchat"),
       Attribute.Unprefixed("id", "test")
     ), Seq()))))

@@ -10,7 +10,7 @@ import com.github.rgafiyatullin.creek_xmpp.protocol.stanzas.jabber_client.Presen
 object Presence extends StanzaFromXml[Presence] {
   sealed trait Type
 
-  private val qn = XmppConstants.names.jabberClient.presence
+  private val qn = XmppConstants.names.jabber.client.presence
 
   object Type {
     val fromString: PartialFunction[Option[String], Type] = {

@@ -73,7 +73,7 @@ class InputStreamSpec extends FlatSpec with Matchers {
     stanzaPresence should be (Some(
       StreamEvent.Stanza(
         Element(
-          XmppConstants.names.jabberClient.presence,
+          XmppConstants.names.jabber.client.presence,
           Seq(), Seq()))))
     val (none, is4) = is3.out
     none should be (None)

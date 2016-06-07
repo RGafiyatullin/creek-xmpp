@@ -25,8 +25,8 @@ class PresenceSpec extends FlatSpec with Matchers with XmlFromStringHelper {
     val somePresence = Presence.fromXml(xml("<presence xmlns='jabber:client' />"))
     somePresence.isDefined should be (true)
     val presence = somePresence.get
-    presence should be (Presence(Element(XmppConstants.names.jabberClient.presence, Seq(
-      Attribute.NsImport("", XmppConstants.names.jabberClient.ns)
+    presence should be (Presence(Element(XmppConstants.names.jabber.client.presence, Seq(
+      Attribute.NsImport("", XmppConstants.names.jabber.client.ns)
     ), Seq())))
     presence.stanzaType should be (Presence.Available)
   }

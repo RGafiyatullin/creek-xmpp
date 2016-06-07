@@ -7,7 +7,7 @@ import com.github.rgafiyatullin.creek_xmpp.protocol.stanza.{Stanza, StanzaFromXm
 import com.github.rgafiyatullin.creek_xmpp.protocol.stanza_error.XmppStanzaError
 
 object IQ extends StanzaFromXml[IQ] {
-  private val qn = XmppConstants.names.jabberClient.iq
+  private val qn = XmppConstants.names.jabber.client.iq
 
   sealed trait Type
   object Type {
