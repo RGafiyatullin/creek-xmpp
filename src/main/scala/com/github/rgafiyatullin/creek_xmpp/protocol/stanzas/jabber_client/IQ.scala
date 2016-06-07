@@ -3,7 +3,8 @@ package com.github.rgafiyatullin.creek_xmpp.protocol.stanzas.jabber_client
 import com.github.rgafiyatullin.creek_xml.dom.{Element, Node}
 import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
 import com.github.rgafiyatullin.creek_xmpp.protocol.jid.Jid
-import com.github.rgafiyatullin.creek_xmpp.protocol.stanza.{Stanza, StanzaFromXml, StanzaSetXml, StanzaType}
+import com.github.rgafiyatullin.creek_xmpp.protocol.stanza.{Stanza, StanzaFromXml, StanzaType}
+import com.github.rgafiyatullin.creek_xmpp.protocol.stanza_error.XmppStanzaError
 
 object IQ extends StanzaFromXml[IQ] {
   private val qn = XmppConstants.names.jabberClient.iq
@@ -46,8 +47,46 @@ object IQ extends StanzaFromXml[IQ] {
   }
 }
 
-case class IQ(xml: Element) extends Stanza with StanzaSetXml[IQ] with StanzaType[IQ.Type] {
+case class IQ(xml: Element) extends Stanza[IQ] with StanzaType[IQ.Type, IQ] {
   override def setXml(newXml: Element): IQ = copy(xml = newXml)
 
   override def stanzaTypeFromString = IQ.Type.fromString
+
+  def isRequest: Boolean =
+    stanzaTypeOption.contains(IQ.Get) || stanzaTypeOption.contains(IQ.Set)
+
+  def isResponse: Boolean =
+    !isRequest
+
+  def bodyOption: Option[Element] = children.headOption.flatMap {
+    case e: Element => Some(e)
+    case _ => None
+  }
+  def body: Element = bodyOption.get
+
+  def responseResult(body: Option[Element] = None): Option[IQ] =
+    Some(isRequest)
+      .collect {
+        case true =>
+          IQ(Element(IQ.qn, Seq(), Seq()))
+            .setId(id)
+            .setFrom(to)
+            .setTo(from)
+            .setChildren(body.toSeq)
+            .setStanzaType(IQ.Result)
+      }
+
+  def responseError(xmppStanzaError: XmppStanzaError): Option[IQ] =
+    Some(isRequest)
+      .collect {
+        case true =>
+          IQ(Element(IQ.qn, Seq(), Seq()))
+            .setId(id)
+            .setFrom(to)
+            .setTo(from)
+            .setChildren(Seq(
+              xmppStanzaError.toXml
+            ))
+            .setStanzaType(IQ.Error)
+      }
 }

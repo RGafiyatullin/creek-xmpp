@@ -22,6 +22,10 @@ object XmppConstants {
       val iq = qn(ns, "iq")
       val message = qn(ns, "message")
     }
-  }
 
+    object urnIetfParamsXmlNsXmppStanzas {
+      val ns = "urn:ietf:params:xml:ns:xmpp-stanzas"
+    }
+
+  }
 }

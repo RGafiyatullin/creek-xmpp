@@ -1,5 +1,9 @@
 package com.github.rgafiyatullin.creek_xmpp.protocol.stanza_error
 
+import com.github.rgafiyatullin.creek_xml.common.{Attribute, QName}
+import com.github.rgafiyatullin.creek_xml.dom.Element
+import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
+
 sealed trait XmppStanzaError extends Throwable {
   def reason: Option[Throwable] = None
   def definedCondition: String
@@ -7,6 +11,17 @@ sealed trait XmppStanzaError extends Throwable {
 
   override def toString: String =
     "XmppStanzaError(%s): %s".format(definedCondition, reason)
+
+  def toXml: Element =
+    Element(
+      XmppConstants.names.jabberClient.error,
+      Seq(
+        Attribute.Unprefixed("type", errorType.toString)
+      ),
+      Seq(
+        Element(
+          QName(XmppConstants.names.urnIetfParamsXmlNsXmppStanzas.ns, definedCondition),
+          Seq(), Seq())))
 }
 
 object XmppStanzaError {

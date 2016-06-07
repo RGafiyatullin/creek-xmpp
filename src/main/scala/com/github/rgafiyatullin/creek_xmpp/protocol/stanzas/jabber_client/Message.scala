@@ -49,7 +49,9 @@ object Message extends StanzaFromXml[Message] {
   }
 }
 
-case class Message(xml: Element) extends Stanza with StanzaTypeWithDefault[Message.Type] {
+case class Message(xml: Element) extends Stanza[Message] with StanzaTypeWithDefault[Message.Type, Message] {
   override def defaultStanzaType: Type = Message.Chat
   override def stanzaTypeFromString: PartialFunction[Option[String], Type] = Type.fromString
+
+  override def setXml(newXml: Element): Message = copy(xml = newXml)
 }

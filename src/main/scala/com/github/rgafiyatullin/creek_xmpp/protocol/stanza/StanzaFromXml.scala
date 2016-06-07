@@ -3,7 +3,7 @@ package com.github.rgafiyatullin.creek_xmpp.protocol.stanza
 import com.github.rgafiyatullin.creek_xml.common.QName
 import com.github.rgafiyatullin.creek_xml.dom.Element
 
-trait StanzaFromXml[StanzaType <: Stanza] {
+trait StanzaFromXml[StanzaType <: Stanza[StanzaType]] {
   def validateXml(xml: Element, stanza: => StanzaType)(
                      qName: Option[QName] = None,
                      typeAttribute: Option[PartialFunction[Option[String], Any]] = None

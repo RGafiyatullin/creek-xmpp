@@ -56,7 +56,7 @@ object Presence extends StanzaFromXml[Presence] {
   }
 }
 
-case class Presence(xml: Element) extends Stanza with StanzaSetXml[Presence] with StanzaTypeWithDefault[Presence.Type] {
+case class Presence(xml: Element) extends Stanza[Presence] with StanzaTypeWithDefault[Presence.Type, Presence] {
   override def defaultStanzaType: Type = Presence.Available
   override def stanzaTypeFromString = Presence.Type.fromString
 

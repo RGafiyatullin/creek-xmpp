@@ -3,13 +3,13 @@ package com.github.rgafiyatullin.creek_xmpp.streams
 import com.github.rgafiyatullin.creek_xml.common.Attribute
 import com.github.rgafiyatullin.creek_xml.dom.Element
 import com.github.rgafiyatullin.creek_xmpp.protocol.stream_error.XmppStreamError
-import com.github.rgafiyatullin.creek_xmpp.protocol.stanza.{Stanza => StanzaPDU}
+import com.github.rgafiyatullin.creek_xmpp.protocol.stanza.{StanzaBase}
 
 sealed trait StreamEvent
 
 object StreamEvent {
   object Stanza {
-    def apply(stanza: StanzaPDU): Stanza =
+    def apply(stanza: StanzaBase): Stanza =
       Stanza(stanza.xml)
   }
 
