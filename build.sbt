@@ -1,4 +1,4 @@
-name := "creek-xmpp-stream"
+name := "creek-xmpp"
 
 version := "0.0"
 
