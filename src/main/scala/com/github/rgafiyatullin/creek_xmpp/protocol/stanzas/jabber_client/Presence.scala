@@ -1,11 +1,9 @@
 package com.github.rgafiyatullin.creek_xmpp.protocol.stanzas.jabber_client
 
-import com.github.rgafiyatullin.creek_xml.common.Attribute
 import com.github.rgafiyatullin.creek_xml.dom.{Element, Node}
 import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
 import com.github.rgafiyatullin.creek_xmpp.protocol.jid.Jid
 import com.github.rgafiyatullin.creek_xmpp.protocol.stanza._
-import com.github.rgafiyatullin.creek_xmpp.protocol.stanzas.jabber_client.Presence.Type
 
 object Presence extends StanzaFromXml[Presence] {
   sealed trait Type
@@ -22,6 +20,7 @@ object Presence extends StanzaFromXml[Presence] {
       case Some(Unsubscribe.toString) => Unsubscribe
       case Some(Subscribed.toString) => Subscribed
       case Some(Unsubscribed.toString) => Unsubscribed
+      case Some(Error.toString) => Error
     }
   }
 
@@ -32,6 +31,7 @@ object Presence extends StanzaFromXml[Presence] {
   case object Unsubscribe extends Type { override val toString = "unsubscribe" }
   case object Subscribed extends Type { override val toString = "subscribed" }
   case object Unsubscribed extends Type { override val toString = "unsubscribed" }
+  case object Error extends Type { override val toString = "error" }
 
   override def fromXml(xml: Element): Option[Presence] =
     validateXml(xml, Presence(xml))(
@@ -56,8 +56,14 @@ object Presence extends StanzaFromXml[Presence] {
   }
 }
 
-case class Presence(xml: Element) extends Stanza[Presence] with StanzaTypeWithDefault[Presence.Type, Presence] {
-  override def defaultStanzaType: Type = Presence.Available
+case class Presence(xml: Element)
+  extends Stanza[Presence]
+    with StanzaTypeWithDefault[Presence.Type, Presence]
+    with StanzaTypeWithError[Presence.Type, Presence]
+{
+  override def errorStanzaType: Presence.Type = Presence.Error
+
+  override def defaultStanzaType: Presence.Type = Presence.Available
   override def stanzaTypeFromString = Presence.Type.fromString
 
   override def setXml(newXml: Element): Presence =

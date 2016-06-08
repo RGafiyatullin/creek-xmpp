@@ -3,7 +3,7 @@ package com.github.rgafiyatullin.creek_xmpp.protocol.stanzas.jabber_client
 import com.github.rgafiyatullin.creek_xml.dom.{Element, Node}
 import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
 import com.github.rgafiyatullin.creek_xmpp.protocol.jid.Jid
-import com.github.rgafiyatullin.creek_xmpp.protocol.stanza.{Stanza, StanzaFromXml, StanzaType}
+import com.github.rgafiyatullin.creek_xmpp.protocol.stanza.{Stanza, StanzaFromXml, StanzaType, StanzaTypeWithError}
 import com.github.rgafiyatullin.creek_xmpp.protocol.stanza_error.XmppStanzaError
 
 object IQ extends StanzaFromXml[IQ] {
@@ -47,7 +47,13 @@ object IQ extends StanzaFromXml[IQ] {
   }
 }
 
-case class IQ(xml: Element) extends Stanza[IQ] with StanzaType[IQ.Type, IQ] {
+case class IQ(xml: Element)
+  extends Stanza[IQ]
+    with StanzaType[IQ.Type, IQ]
+    with StanzaTypeWithError[IQ.Type, IQ]
+{
+  override def errorStanzaType: IQ.Type = IQ.Error
+
   override def setXml(newXml: Element): IQ = copy(xml = newXml)
 
   override def stanzaTypeFromString = IQ.Type.fromString

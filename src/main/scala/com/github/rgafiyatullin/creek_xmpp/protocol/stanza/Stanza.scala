@@ -3,6 +3,7 @@ package com.github.rgafiyatullin.creek_xmpp.protocol.stanza
 import com.github.rgafiyatullin.creek_xml.common.Attribute
 import com.github.rgafiyatullin.creek_xml.dom.{Element, Node}
 import com.github.rgafiyatullin.creek_xmpp.protocol.jid.Jid
+import com.github.rgafiyatullin.creek_xmpp.protocol.stanza_error.XmppStanzaError
 
 trait StanzaBase {
   val xml: Element

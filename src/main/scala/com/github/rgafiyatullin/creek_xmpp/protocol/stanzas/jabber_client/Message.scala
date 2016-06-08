@@ -3,8 +3,7 @@ package com.github.rgafiyatullin.creek_xmpp.protocol.stanzas.jabber_client
 import com.github.rgafiyatullin.creek_xml.dom.{Element, Node}
 import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
 import com.github.rgafiyatullin.creek_xmpp.protocol.jid.Jid
-import com.github.rgafiyatullin.creek_xmpp.protocol.stanza.{Stanza, StanzaFromXml, StanzaTypeWithDefault}
-import com.github.rgafiyatullin.creek_xmpp.protocol.stanzas.jabber_client.Message.Type
+import com.github.rgafiyatullin.creek_xmpp.protocol.stanza.{Stanza, StanzaFromXml, StanzaTypeWithDefault, StanzaTypeWithError}
 
 object Message extends StanzaFromXml[Message] {
   private val qn = XmppConstants.names.jabber.client.message
@@ -49,9 +48,14 @@ object Message extends StanzaFromXml[Message] {
   }
 }
 
-case class Message(xml: Element) extends Stanza[Message] with StanzaTypeWithDefault[Message.Type, Message] {
-  override def defaultStanzaType: Type = Message.Chat
-  override def stanzaTypeFromString: PartialFunction[Option[String], Type] = Type.fromString
+case class Message(xml: Element)
+  extends Stanza[Message]
+    with StanzaTypeWithDefault[Message.Type, Message]
+    with StanzaTypeWithError[Message.Type, Message]
+{
+  override def errorStanzaType: Message.Type = Message.Error
+  override def defaultStanzaType: Message.Type = Message.Chat
+  override def stanzaTypeFromString: PartialFunction[Option[String], Message.Type] = Message.Type.fromString
 
   override def setXml(newXml: Element): Message = copy(xml = newXml)
 }
