@@ -35,6 +35,14 @@ object XmppConstants {
           }
         }
       }
+
+      object xmpp {
+        object ping {
+          val ns = "urn:xmpp:ping"
+
+          val ping = qn(ns, "ping")
+        }
+      }
     }
   }
 }
