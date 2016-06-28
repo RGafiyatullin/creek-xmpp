@@ -10,9 +10,10 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.6"
 )
 
-val creekXmlVersion = "a60c08f2e649ffea5d5101461ac8b7dc0e4bfb15"
+val creekXmlVersion = "ef195513452f3c79331f0dcd12237498c25e2fd1"
 val creekXmlUrlBase = "https://github.com/RGafiyatullin/creek-xml.git"
 val creekXmlUrl = url("%s#%s".format(creekXmlUrlBase, creekXmlVersion))
+//val creekXmlUrl = file("../creek-xml")
 lazy val creekXmlSubProject = RootProject(creekXmlUrl.toURI)
 
 
