@@ -24,7 +24,7 @@ object IQ extends StanzaFromXml[IQ] {
   case object Result extends Type { override val toString = "result" }
   case object Error extends Type { override val toString = "error" }
 
-  override def fromXml(xml: Element): Option[IQ] =
+  override def fromXml(xml: Node): Option[IQ] =
     validateXml(xml, IQ(xml))(
       qName = Some(qn),
       typeAttribute = Some(IQ.Type.fromString)
@@ -47,14 +47,14 @@ object IQ extends StanzaFromXml[IQ] {
   }
 }
 
-case class IQ(xml: Element)
+case class IQ(xml: Node)
   extends Stanza[IQ]
     with StanzaType[IQ.Type, IQ]
     with StanzaTypeWithError[IQ.Type, IQ]
 {
   override def errorStanzaType: IQ.Type = IQ.Error
 
-  override def setXml(newXml: Element): IQ = copy(xml = newXml)
+  override def setXml(newXml: Node): IQ = copy(xml = newXml)
 
   override def stanzaTypeFromString = IQ.Type.fromString
 
@@ -64,13 +64,13 @@ case class IQ(xml: Element)
   def isResponse: Boolean =
     !isRequest
 
-  def bodyOption: Option[Element] = children.headOption.flatMap {
-    case e: Element => Some(e)
+  def bodyOption: Option[Node] = children.headOption.flatMap {
+    case e: Node => Some(e)
     case _ => None
   }
-  def body: Element = bodyOption.get
+  def body: Node = bodyOption.get
 
-  def responseResult(body: Option[Element] = None): Option[IQ] =
+  def responseResult(body: Option[Node] = None): Option[IQ] =
     Some(isRequest)
       .collect {
         case true =>

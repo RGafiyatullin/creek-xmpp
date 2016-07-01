@@ -1,6 +1,6 @@
 package com.github.rgafiyatullin.creek_xmpp.streams
 
-import com.github.rgafiyatullin.creek_xml.dom.{Element, NodeBuilder}
+import com.github.rgafiyatullin.creek_xml.dom.{Element, Node, NodeBuilder}
 import com.github.rgafiyatullin.creek_xml.common.{HighLevelEvent, QName}
 import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
 import com.github.rgafiyatullin.creek_xmpp.protocol.stream_error.XmppStreamError
@@ -57,7 +57,7 @@ private[streams] object InputStreamState {
       case selfClosing: HighLevelEvent.ElementSelfClosing =>
         val stanza = NodeBuilder
           .empty.in(selfClosing)
-          .nodeOption.get.asInstanceOf[Element]
+          .nodeOption.get
 
         ExpectStanza(Some(StreamEvent.Stanza(stanza)))
 
@@ -89,7 +89,7 @@ private[streams] object InputStreamState {
           case None =>
             copy(stanzaBuilder = nextStanzaBuilder)
 
-          case Some(stanza: Element) =>
+          case Some(stanza: Node) =>
             val event = StreamEvent.Stanza(stanza)
             ExpectStanza(Some(event))
 

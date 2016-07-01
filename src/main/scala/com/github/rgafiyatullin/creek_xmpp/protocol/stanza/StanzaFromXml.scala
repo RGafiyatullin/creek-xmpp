@@ -1,10 +1,10 @@
 package com.github.rgafiyatullin.creek_xmpp.protocol.stanza
 
 import com.github.rgafiyatullin.creek_xml.common.QName
-import com.github.rgafiyatullin.creek_xml.dom.Element
+import com.github.rgafiyatullin.creek_xml.dom.{Element, Node}
 
 trait StanzaFromXml[StanzaType <: Stanza[StanzaType]] {
-  def validateXml(xml: Element, stanza: => StanzaType)(
+  def validateXml(xml: Node, stanza: => StanzaType)(
                      qName: Option[QName] = None,
                      typeAttribute: Option[PartialFunction[Option[String], Any]] = None
   ): Option[StanzaType] = {
@@ -19,8 +19,8 @@ trait StanzaFromXml[StanzaType <: Stanza[StanzaType]] {
       None
   }
 
-  def fromXml(xml: Element): Option[StanzaType]
+  def fromXml(xml: Node): Option[StanzaType]
 
-  def checkXml(xml: Element): Boolean =
+  def checkXml(xml: Node): Boolean =
     fromXml(xml).isDefined
 }

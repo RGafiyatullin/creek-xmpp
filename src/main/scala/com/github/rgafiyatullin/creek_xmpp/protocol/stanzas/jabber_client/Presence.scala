@@ -33,7 +33,7 @@ object Presence extends StanzaFromXml[Presence] {
   case object Unsubscribed extends Type { override val toString = "unsubscribed" }
   case object Error extends Type { override val toString = "error" }
 
-  override def fromXml(xml: Element): Option[Presence] =
+  override def fromXml(xml: Node): Option[Presence] =
     validateXml(xml, Presence(xml))(
       qName = Some(qn),
       typeAttribute = Some(Type.fromString)
@@ -56,7 +56,7 @@ object Presence extends StanzaFromXml[Presence] {
   }
 }
 
-case class Presence(xml: Element)
+case class Presence(xml: Node)
   extends Stanza[Presence]
     with StanzaTypeWithDefault[Presence.Type, Presence]
     with StanzaTypeWithError[Presence.Type, Presence]
@@ -66,6 +66,6 @@ case class Presence(xml: Element)
   override def defaultStanzaType: Presence.Type = Presence.Available
   override def stanzaTypeFromString = Presence.Type.fromString
 
-  override def setXml(newXml: Element): Presence =
+  override def setXml(newXml: Node): Presence =
     copy(xml = newXml)
 }

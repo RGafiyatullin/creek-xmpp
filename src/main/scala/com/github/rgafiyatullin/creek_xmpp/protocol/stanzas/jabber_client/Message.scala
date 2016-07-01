@@ -26,7 +26,7 @@ object Message extends StanzaFromXml[Message] {
   case object Headline extends Type { override val toString = "headline" }
   case object Normal extends Type { override val toString = "normal" }
 
-  override def fromXml(xml: Element): Option[Message] =
+  override def fromXml(xml: Node): Option[Message] =
     validateXml(xml, Message(xml))(
       qName = Some(qn),
       typeAttribute = Some(Type.fromString))
@@ -48,7 +48,7 @@ object Message extends StanzaFromXml[Message] {
   }
 }
 
-case class Message(xml: Element)
+case class Message(xml: Node)
   extends Stanza[Message]
     with StanzaTypeWithDefault[Message.Type, Message]
     with StanzaTypeWithError[Message.Type, Message]
@@ -57,5 +57,5 @@ case class Message(xml: Element)
   override def defaultStanzaType: Message.Type = Message.Chat
   override def stanzaTypeFromString: PartialFunction[Option[String], Message.Type] = Message.Type.fromString
 
-  override def setXml(newXml: Element): Message = copy(xml = newXml)
+  override def setXml(newXml: Node): Message = copy(xml = newXml)
 }
