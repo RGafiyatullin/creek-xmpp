@@ -12,8 +12,8 @@ libraryDependencies ++= Seq(
 
 val creekXmlVersion = "7376450"
 val creekXmlUrlBase = "https://github.com/RGafiyatullin/creek-xml.git"
-//val creekXmlUrl = url("%s#%s".format(creekXmlUrlBase, creekXmlVersion))
-val creekXmlUrl = file("../creek-xml")
+val creekXmlUrl = url("%s#%s".format(creekXmlUrlBase, creekXmlVersion))
+//val creekXmlUrl = file("../creek-xml")
 lazy val creekXmlSubProject = RootProject(creekXmlUrl.toURI)
 
 
