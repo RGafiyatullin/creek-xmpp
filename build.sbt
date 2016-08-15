@@ -1,20 +1,22 @@
 name := "creek-xmpp"
 
-version := "0.0"
+version := "0.1.0"
 
 scalaVersion in ThisBuild := "2.11.8"
+
+organization := "com.github.rgafiyatullin"
+
+publishTo := {
+  val nexus = "http://nexus.in-docker.localhost:8081/"
+  Some("releases"  at nexus + "content/repositories/releases")
+}
+credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
 lazy val commonSettings = Seq()
 
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "2.2.6"
+  "org.scalatest" %% "scalatest" % "2.2.6",
+  "com.github.rgafiyatullin" %% "creek-xml" % "0.1.0"
 )
 
-val creekXmlVersion = "7376450"
-val creekXmlUrlBase = "https://github.com/RGafiyatullin/creek-xml.git"
-val creekXmlUrl = url("%s#%s".format(creekXmlUrlBase, creekXmlVersion))
-//val creekXmlUrl = file("../creek-xml")
-lazy val creekXmlSubProject = RootProject(creekXmlUrl.toURI)
-
-
-lazy val creekXmpp = Project("creek-xmpp", file(".")).dependsOn(creekXmlSubProject)
+lazy val creekXmpp = Project("creek-xmpp", file("."))
