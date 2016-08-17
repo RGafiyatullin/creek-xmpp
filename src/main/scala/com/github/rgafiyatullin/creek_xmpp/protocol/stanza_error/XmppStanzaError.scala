@@ -1,19 +1,23 @@
 package com.github.rgafiyatullin.creek_xmpp.protocol.stanza_error
 
 import com.github.rgafiyatullin.creek_xml.common.{Attribute, QName}
-import com.github.rgafiyatullin.creek_xml.dom.Element
+import com.github.rgafiyatullin.creek_xml.dom.{CData, Element}
 import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
 
 sealed trait XmppStanzaError extends Throwable {
   def reason: Option[Throwable] = None
   def definedCondition: String
   def errorType: XmppStanzaErrorType
+  def text: Option[String] = None
+
+  def withText(t: String): XmppStanzaError
+  def withText(t: Option[String]): XmppStanzaError
 
   override def toString: String =
     "XmppStanzaError(%s): %s".format(definedCondition, reason)
 
-  def toXml: Element =
-    Element(
+  def toXml: Element = {
+    val noText = Element(
       XmppConstants.names.jabber.client.error,
       Seq(
         Attribute.Unprefixed("type", errorType.toString)
@@ -22,6 +26,15 @@ sealed trait XmppStanzaError extends Throwable {
         Element(
           QName(XmppConstants.names.urn.ietf.params.xmlNs.xmppStanzas.ns, definedCondition),
           Seq(), Seq())))
+    text match {
+      case None => noText
+      case Some(t) =>
+        val textChild = Element(
+          XmppConstants.names.urn.ietf.params.xmlNs.xmppStanzas.text,
+          Seq(), Seq(CData(t)))
+        noText.setChildren(noText.children ++ Seq(textChild))
+    }
+  }
 }
 
 object XmppStanzaError {
@@ -90,9 +103,12 @@ object XmppStanzaError {
     */
   final case class BadRequest(
                                override val reason: Option[Throwable] = None,
-                               override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Modify)
+                               override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Modify,
+                               override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.badRequest
+    def withText(t: String): BadRequest = withText(Some(t))
+    def withText(t: Option[String]): BadRequest = copy(text = t)
   }
 
 
@@ -107,9 +123,12 @@ object XmppStanzaError {
     */
   final case class Conflict(
                              override val reason: Option[Throwable] = None,
-                             override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel)
+                             override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
+                             override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.conflict
+    def withText(t: String): Conflict = withText(Some(t))
+    def withText(t: Option[String]): Conflict = copy(text = t)
   }
 
 
@@ -125,9 +144,12 @@ object XmppStanzaError {
     */
   final case class FeatureNotImplemented(
                                           override val reason: Option[Throwable] = None,
-                                          override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel)
+                                          override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
+                                          override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.featureNotImplemented
+    def withText(t: String): FeatureNotImplemented = withText(Some(t))
+    def withText(t: Option[String]): FeatureNotImplemented = copy(text = t)
   }
 
 
@@ -143,9 +165,12 @@ object XmppStanzaError {
     */
   final case class Forbidden(
                               override val reason: Option[Throwable] = None,
-                              override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Auth)
+                              override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Auth,
+                              override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.forbidden
+    def withText(t: String): Forbidden = withText(Some(t))
+    def withText(t: Option[String]): Forbidden = copy(text = t)
   }
 
 
@@ -164,9 +189,13 @@ object XmppStanzaError {
     */
   final case class Gone(
                          override val reason: Option[Throwable] = None,
-                         override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel)
+                         override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
+                         override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.gone
+    def withText(t: String): Gone = withText(Some(t))
+    def withText(t: Option[String]): Gone = copy(text = t)
+
   }
 
 
@@ -181,9 +210,12 @@ object XmppStanzaError {
     */
   final case class InternalServerError(
                                         override val reason: Option[Throwable] = None,
-                                        override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel)
+                                        override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
+                                        override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.internalServerError
+    def withText(t: String): InternalServerError = withText(Some(t))
+    def withText(t: Option[String]): InternalServerError = copy(text = t)
   }
 
 
@@ -197,9 +229,12 @@ object XmppStanzaError {
     */
   final case class ItemNotFound(
                                  override val reason: Option[Throwable] = None,
-                                 override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel)
+                                 override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
+                                 override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.itemNotFound
+    def withText(t: String): ItemNotFound = withText(Some(t))
+    def withText(t: Option[String]): ItemNotFound = copy(text = t)
   }
 
 
@@ -215,9 +250,12 @@ object XmppStanzaError {
     */
   final case class JidMalformed(
                                  override val reason: Option[Throwable] = None,
-                                 override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Modify)
+                                 override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Modify,
+                                 override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.jidMalformed
+    def withText(t: String): JidMalformed = withText(Some(t))
+    def withText(t: Option[String]): JidMalformed = copy(text = t)
   }
 
 
@@ -233,9 +271,12 @@ object XmppStanzaError {
     */
   final case class NotAcceptable(
                                   override val reason: Option[Throwable] = None,
-                                  override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Modify)
+                                  override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Modify,
+                                  override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.notAcceptable
+    def withText(t: String): NotAcceptable = withText(Some(t))
+    def withText(t: Option[String]): NotAcceptable = copy(text = t)
   }
 
 
@@ -250,9 +291,12 @@ object XmppStanzaError {
     */
   final case class NotAllowed(
                                override val reason: Option[Throwable] = None,
-                               override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel)
+                               override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
+                               override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.notAllowed
+    def withText(t: String): NotAllowed = withText(Some(t))
+    def withText(t: Option[String]): NotAllowed = copy(text = t)
   }
 
 
@@ -269,9 +313,12 @@ object XmppStanzaError {
     */
   final case class NotAuthorized(
                                   override val reason: Option[Throwable] = None,
-                                  override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Auth)
+                                  override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Auth,
+                                  override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.notAuthorized
+    def withText(t: String): NotAuthorized = withText(Some(t))
+    def withText(t: Option[String]): NotAuthorized = copy(text = t)
   }
 
 
@@ -288,9 +335,12 @@ object XmppStanzaError {
     */
   final case class PolicyViolation(
                                     override val reason: Option[Throwable] = None,
-                                    override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Modify)
+                                    override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Modify,
+                                    override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.policyViolation
+    def withText(t: String): PolicyViolation = withText(Some(t))
+    def withText(t: Option[String]): PolicyViolation = copy(text = t)
   }
 
 
@@ -305,9 +355,12 @@ object XmppStanzaError {
     */
   final case class RecipientUnavailable(
                                          override val reason: Option[Throwable] = None,
-                                         override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Wait)
+                                         override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Wait,
+                                         override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.recipientUnavailable
+    def withText(t: String): RecipientUnavailable = withText(Some(t))
+    def withText(t: Option[String]): RecipientUnavailable = copy(text = t)
   }
 
 
@@ -322,9 +375,12 @@ object XmppStanzaError {
     */
   final case class Redirect(
                              override val reason: Option[Throwable] = None,
-                             override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Wait)
+                             override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Wait,
+                             override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.redirect
+    def withText(t: String): Redirect = withText(Some(t))
+    def withText(t: Option[String]): Redirect = copy(text = t)
   }
 
 
@@ -341,9 +397,12 @@ object XmppStanzaError {
     */
   final case class RegistrationRequired(
                                          override val reason: Option[Throwable] = None,
-                                         override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Auth)
+                                         override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Auth,
+                                         override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.registrationRequired
+    def withText(t: String): RegistrationRequired = withText(Some(t))
+    def withText(t: Option[String]): RegistrationRequired = copy(text = t)
   }
 
 
@@ -360,9 +419,12 @@ object XmppStanzaError {
     */
   final case class RemoteServerNotFound(
                                          override val reason: Option[Throwable] = None,
-                                         override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel)
+                                         override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
+                                         override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.remoteServerNotFound
+    def withText(t: String): RemoteServerNotFound = withText(Some(t))
+    def withText(t: Option[String]): RemoteServerNotFound = copy(text = t)
   }
 
   /**
@@ -380,9 +442,12 @@ object XmppStanzaError {
     */
   final case class RemoteServerTimeout(
                                         override val reason: Option[Throwable] = None,
-                                        override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Wait)
+                                        override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Wait,
+                                        override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.remoteServerTimeout
+    def withText(t: String): RemoteServerTimeout = withText(Some(t))
+    def withText(t: Option[String]): RemoteServerTimeout = copy(text = t)
   }
 
 
@@ -397,9 +462,12 @@ object XmppStanzaError {
     */
   final case class ResourceConstraint(
                                        override val reason: Option[Throwable] = None,
-                                       override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Wait)
+                                       override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Wait,
+                                       override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.resourceConstraint
+    def withText(t: String): ResourceConstraint = withText(Some(t))
+    def withText(t: Option[String]): ResourceConstraint = copy(text = t)
   }
 
   /**
@@ -413,9 +481,12 @@ object XmppStanzaError {
     */
   final case class ServiceUnavailable(
                                        override val reason: Option[Throwable] = None,
-                                       override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel)
+                                       override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
+                                       override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.serviceUnavailable
+    def withText(t: String): ServiceUnavailable = withText(Some(t))
+    def withText(t: Option[String]): ServiceUnavailable = copy(text = t)
   }
 
   /**
@@ -431,9 +502,12 @@ object XmppStanzaError {
     */
   final case class SubscriptionRequired(
                                          override val reason: Option[Throwable] = None,
-                                         override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Auth)
+                                         override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Auth,
+                                         override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.subscriptionRequired
+    def withText(t: String): SubscriptionRequired = withText(Some(t))
+    def withText(t: Option[String]): SubscriptionRequired = copy(text = t)
   }
 
   /**
@@ -448,9 +522,12 @@ object XmppStanzaError {
     */
   final case class UndefinedCondition(
                                        override val reason: Option[Throwable] = None,
-                                       override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel)
+                                       override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
+                                       override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.undefinedCondition
+    def withText(t: String): UndefinedCondition = withText(Some(t))
+    def withText(t: Option[String]): UndefinedCondition = copy(text = t)
   }
 
   /**
@@ -464,9 +541,12 @@ object XmppStanzaError {
     */
   final case class UnexpectedRequest(
                                       override val reason: Option[Throwable] = None,
-                                      override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Wait)
+                                      override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Wait,
+                                      override val text: Option[String] = None)
     extends XmppStanzaError {
     def definedCondition = XmppStanzaError.conditions.unexpectedRequest
+    def withText(t: String): UnexpectedRequest = withText(Some(t))
+    def withText(t: Option[String]): UnexpectedRequest = copy(text = t)
   }
 
 }

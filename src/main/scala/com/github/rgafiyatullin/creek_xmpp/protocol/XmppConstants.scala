@@ -31,6 +31,8 @@ object XmppConstants {
           object xmlNs {
             object xmppStanzas {
               val ns = "urn:ietf:params:xml:ns:xmpp-stanzas"
+
+              val text = qn(ns, "text")
             }
           }
         }
