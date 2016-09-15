@@ -1,8 +1,12 @@
 package com.github.rgafiyatullin.creek_xmpp.protocol.stanza_error
 
 import com.github.rgafiyatullin.creek_xml.common.{Attribute, QName}
-import com.github.rgafiyatullin.creek_xml.dom.{CData, Element}
+import com.github.rgafiyatullin.creek_xml.dom.{CData, Element, Node}
 import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
+import com.github.rgafiyatullin.creek_xml.dom_query.Implicits._
+import com.github.rgafiyatullin.creek_xml.dom_query.Predicate
+import com.github.rgafiyatullin.creek_xmpp.protocol.stanza.Stanza
+import com.github.rgafiyatullin.creek_xmpp.protocol.stream_error.XmppStreamError
 
 sealed trait XmppStanzaError extends Throwable {
   def reason: Option[Throwable] = None
@@ -14,7 +18,12 @@ sealed trait XmppStanzaError extends Throwable {
   def withText(t: Option[String]): XmppStanzaError
 
   override def toString: String =
-    "XmppStanzaError(%s): %s".format(definedCondition, reason)
+    text match {
+      case None =>
+        "XmppStanzaError(%s): %s".format(definedCondition, reason)
+      case Some(textDefined) =>
+        "XmppStanzaError(%s, \"%s\"): %s".format(definedCondition, textDefined, reason)
+    }
 
   def toXml: Element = {
     val noText = Element(
@@ -38,6 +47,27 @@ sealed trait XmppStanzaError extends Throwable {
 }
 
 object XmppStanzaError {
+
+  def fromStanza(stanza: Stanza[_]): Option[XmppStanzaError] =
+    fromStanza(stanza.xml)
+
+  def fromStanza(stanzaNode: Node): Option[XmppStanzaError] = {
+    val jc = XmppConstants.names.jabber.client
+    (stanzaNode select jc.error).headOption.flatMap(fromXml)
+  }
+
+  def fromXml(errorNode: Node): Option[XmppStanzaError] = {
+    val xs = XmppConstants.names.urn.ietf.params.xmlNs.xmppStanzas
+    if (errorNode.qName != XmppConstants.names.jabber.client.error)
+      None
+    else for {
+      conditionNode <- errorNode.children.headOption if conditionNode.qName.ns == XmppConstants.names.urn.ietf.params.xmlNs.xmppStanzas.ns
+      stanzaErrorCreateFunc <- fromDefinedCondition.lift(conditionNode.qName.localName)
+      stanzaErrorType = errorNode.attribute("type").flatMap(XmppStanzaErrorType.fromString.lift).getOrElse(XmppStanzaErrorType.Cancel)
+      maybeTextNode = (errorNode select xs.text).headOption
+    }
+      yield stanzaErrorCreateFunc(None, stanzaErrorType).withText(maybeTextNode.map(_.text))
+  }
 
   object conditions {
     val badRequest = "bad-request"
