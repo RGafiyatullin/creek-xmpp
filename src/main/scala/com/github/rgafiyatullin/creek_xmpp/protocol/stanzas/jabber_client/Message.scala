@@ -11,7 +11,7 @@ object Message extends StanzaFromXml[Message] {
   sealed trait Type
   object Type {
     val fromString: PartialFunction[Option[String], Type] = {
-      case None => Normal
+      case None => Chat
       case Some(Chat.toString) => Chat
       case Some(Error.toString) => Error
       case Some(Groupchat.toString) => Groupchat
