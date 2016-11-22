@@ -21,7 +21,6 @@ class StanzaErrorSpec extends FlatSpec with Matchers {
           errorType should be (XmppStanzaErrorType.Continue)
           text should be (Some(expectedErrorText))
       }
-
     }
   }
 }
