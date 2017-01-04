@@ -1,59 +1,29 @@
 package com.github.rgafiyatullin.creek_xmpp.streams
 
 import com.github.rgafiyatullin.creek_xml.common.HighLevelEvent
-import com.github.rgafiyatullin.creek_xml.stream_parser.high_level_parser.{HighLevelParser, HighLevelParserError}
-import com.github.rgafiyatullin.creek_xml.stream_parser.low_level_parser.LowLevelParserError
-import com.github.rgafiyatullin.creek_xml.stream_parser.tokenizer.TokenizerError
 import com.github.rgafiyatullin.creek_xmpp.protocol.stream_error.XmppStreamError
-
-import scala.annotation.tailrec
+import scala.collection.immutable.Queue
 
 object InputStream {
   def empty: InputStream =
     InputStream(
-      InputStreamState.ExpectStreamOpen(None),
-      HighLevelParser.empty.withoutPosition)
+      InputStreamState.ExpectStreamOpen(None))
 }
 
 
-case class InputStream(state: InputStreamState, parser: HighLevelParser) {
-  def in(char: Char): InputStream =
-    copy(parser = parser.in(char))
-
-  def in(string: String): InputStream =
-    copy(parser = parser.in(string))
-
-  @tailrec
-  final def out: (Option[StreamEvent], InputStream) = {
-    getNextParserEvent(parser) match {
-      case Right(nextParser) =>
-        (None, copy(parser = nextParser))
-
-      case Left((hle, nextParser)) =>
-        val nextState = state.handleEvent.applyOrElse(hle, unexpectedParserEvent _)
-        val nextStream = copy(state = nextState, parser = nextParser)
-        nextState.eventOption match {
-          case None =>
-            nextStream.out
-
-          case Some(streamEvent) =>
-            (Some(streamEvent), nextStream)
-        }
+case class InputStream(state: InputStreamState, output: Queue[StreamEvent] = Queue.empty) {
+  def in(hle: HighLevelEvent): InputStream = {
+    val state1 = state.handleEvent.applyOrElse(hle, unexpectedParserEvent)
+    state1.eventOption match {
+      case None =>
+        copy(state = state1)
+      case Some(event) =>
+        copy(state = state1, output = output.enqueue(event))
     }
   }
 
-  private def getNextParserEvent(parser0: HighLevelParser): Either[(HighLevelEvent, HighLevelParser), HighLevelParser] =
-    try Left(parser0.out)
-    catch {
-      case HighLevelParserError.LowLevel(
-        parser1,
-        LowLevelParserError.TokError(
-          _, TokenizerError.InputBufferUnderrun(_)))
-      =>
-        Right(parser1)
-    }
-
-
+  def out: (Option[StreamEvent], InputStream) =
+    (output.headOption, copy(output = output.drop(1)))
 
   private def unexpectedParserEvent(highLevelEvent: HighLevelEvent) =
     InputStreamState.LocalError(XmppStreamError.InternalServerError())
