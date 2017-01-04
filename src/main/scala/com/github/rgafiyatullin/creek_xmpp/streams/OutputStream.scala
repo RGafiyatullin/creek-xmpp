@@ -9,17 +9,14 @@ import scala.collection.immutable.Queue
 
 object OutputStream {
   def empty: OutputStream =
-    OutputStream(HighLevelWriter.empty, Queue.empty)
+    OutputStream(Queue.empty)
 }
 
-case class OutputStream(writer: HighLevelWriter, outputStash: Queue[String]) {
+case class OutputStream(outputStash: Queue[HighLevelEvent]) {
   private val emptyPosition: Position = Position.withoutPosition
 
-  def out: (Queue[String], OutputStream) = {
-    val (writerOutput, nextWriter) = writer.out
-    val output = writerOutput.foldLeft(outputStash)(_.enqueue(_))
-    val nextOutputStream = copy(writer = nextWriter, outputStash = Queue.empty)
-    (output, nextOutputStream)
+  def out: (Queue[HighLevelEvent], OutputStream) = {
+    (outputStash, copy(outputStash = Queue.empty))
   }
 
   def in(streamEvent: StreamEvent): OutputStream =
@@ -44,20 +41,16 @@ case class OutputStream(writer: HighLevelWriter, outputStash: Queue[String]) {
           emptyPosition, "", "stream",
           XmppConstants.names.streams.ns, attributesWithImport)
         val nextWriter = HighLevelWriter.empty.in(hleStreamOpen)
-        val nextOutputStash = writer.out._1
-          .foldLeft(outputStash)(_.enqueue(_))
-        copy(writer = nextWriter, outputStash = nextOutputStash)
+        copy(outputStash = outputStash.enqueue(hleStreamOpen))
 
       case StreamEvent.StreamClose() =>
         val hleStreamClose = HighLevelEvent.ElementClose(
           emptyPosition, "", "stream", XmppConstants.names.streams.ns)
-        val nextWriter = writer.in(hleStreamClose)
-        copy(writer = nextWriter)
+        copy(outputStash = outputStash.enqueue(hleStreamClose))
 
       case StreamEvent.Stanza(stanzaXml) =>
         val stanzaHLEvents = stanzaXml.toEvents
-        val nextWriter = stanzaHLEvents.foldLeft(writer)(_.in(_))
-        copy(writer = nextWriter)
+        copy(outputStash = stanzaHLEvents.foldLeft(outputStash)(_.enqueue(_)))
 
       case StreamEvent.LocalError(xmppStreamError) =>
         val streamErrorStanza = StreamError.create(xmppStreamError)

@@ -1,6 +1,6 @@
 name := "creek-xmpp"
 
-version := "0.1.5"
+version := "0.2.0"
 
 scalaVersion in ThisBuild := "2.11.8"
 
