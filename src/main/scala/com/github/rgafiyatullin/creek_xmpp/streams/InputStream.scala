@@ -28,6 +28,9 @@ case class InputStream(state: InputStreamState, output: Queue[StreamEvent] = Que
   def outAll: (Seq[StreamEvent], InputStream) =
     (output, copy(output = Queue.empty))
 
+  def expectStreamOpen: InputStream =
+    copy(state = InputStreamState.ExpectStreamOpen(None))
+
   private def unexpectedParserEvent(highLevelEvent: HighLevelEvent) =
     InputStreamState.LocalError(XmppStreamError.InternalServerError())
 

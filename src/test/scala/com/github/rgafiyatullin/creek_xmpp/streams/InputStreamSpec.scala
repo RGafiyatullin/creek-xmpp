@@ -110,6 +110,30 @@ class InputStreamSpec extends FlatSpec with Matchers {
     localErrorInvalidXml should be (Some(StreamEvent.LocalError(XmppStreamError.InvalidXml())))
   }
 
+  it should "not trigger stream error upon expected stream-reopen" in {
+    val hles = Seq(
+      HighLevelEvent.ElementOpen(ep, "stream", "stream", "http://etherx.jabber.org/streams", Seq(
+        Attribute.NsImport("", "jabber:client"),
+        Attribute.NsImport("stream", "http://etherx.jabber.org/streams")
+      )),
+      HighLevelEvent.ElementOpen(ep, "stream", "stream", "http://etherx.jabber.org/streams", Seq(
+        Attribute.NsImport("", "jabber:client"),
+        Attribute.NsImport("stream", "http://etherx.jabber.org/streams")
+      ))
+    )
+    val is0 = hles.foldLeft(InputStream.empty)(_.in(_).expectStreamOpen)
+    val (streamOpen, is1) = is0.out
+    streamOpen should be (Some(StreamEvent.StreamOpen(Seq(
+      Attribute.NsImport("", "jabber:client"),
+      Attribute.NsImport("stream", "http://etherx.jabber.org/streams")
+    ))))
+    val (streamOpenAgain, is2) = is1.out
+    streamOpenAgain should be (Some(StreamEvent.StreamOpen(Seq(
+      Attribute.NsImport("", "jabber:client"),
+      Attribute.NsImport("stream", "http://etherx.jabber.org/streams")
+    ))))
+  }
+
   it should "result in stream-open and stream-closed events" in {
     val hles = Seq(
       HighLevelEvent.ElementOpen(ep, "stream", "stream", "http://etherx.jabber.org/streams", Seq(
