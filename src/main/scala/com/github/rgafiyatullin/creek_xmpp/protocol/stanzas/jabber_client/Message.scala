@@ -5,6 +5,8 @@ import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
 import com.github.rgafiyatullin.creek_xmpp.protocol.jid.Jid
 import com.github.rgafiyatullin.creek_xmpp.protocol.stanza.{Stanza, StanzaFromXml, StanzaTypeWithDefault, StanzaTypeWithError}
 
+import scala.util.Try
+
 object Message extends StanzaFromXml[Message] {
   private val qn = XmppConstants.names.jabber.client.message
 
@@ -26,7 +28,7 @@ object Message extends StanzaFromXml[Message] {
   case object Headline extends Type { override val toString = "headline" }
   case object Normal extends Type { override val toString = "normal" }
 
-  override def fromXml(xml: Node): Option[Message] =
+  override def fromXml(xml: Node): Try[Message] =
     validateXml(xml, Message(xml))(
       qName = Some(qn),
       typeAttribute = Some(Type.fromString))

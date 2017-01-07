@@ -5,6 +5,8 @@ import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
 import com.github.rgafiyatullin.creek_xmpp.protocol.jid.Jid
 import com.github.rgafiyatullin.creek_xmpp.protocol.stanza._
 
+import scala.util.Try
+
 object Presence extends StanzaFromXml[Presence] {
   sealed trait Type
 
@@ -33,7 +35,7 @@ object Presence extends StanzaFromXml[Presence] {
   case object Unsubscribed extends Type { override val toString = "unsubscribed" }
   case object Error extends Type { override val toString = "error" }
 
-  override def fromXml(xml: Node): Option[Presence] =
+  override def fromXml(xml: Node): Try[Presence] =
     validateXml(xml, Presence(xml))(
       qName = Some(qn),
       typeAttribute = Some(Type.fromString)

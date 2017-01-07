@@ -8,6 +8,7 @@ import com.github.rgafiyatullin.creek_xmpp.protocol.jid.Jid
 import org.scalatest.{FlatSpec, Matchers}
 
 import scala.collection.immutable.Queue
+import scala.util.Success
 
 class IQSpec extends FlatSpec with Matchers with XmlFromStringHelper {
   "IQ.Type" should "parse and render" in {
@@ -21,20 +22,20 @@ class IQSpec extends FlatSpec with Matchers with XmlFromStringHelper {
     }
   }
 
-  "IQ.fromXml" should "return Some(iq)" in {
-    IQ.fromXml(xml("<iq xmlns='jabber:client' type='result' id='test' />")) should be (Some(IQ(Element(XmppConstants.names.jabber.client.iq, Seq(
+  "IQ.fromXml" should "return Success(iq)" in {
+    IQ.fromXml(xml("<iq xmlns='jabber:client' type='result' id='test' />")) should be (Success(IQ(Element(XmppConstants.names.jabber.client.iq, Seq(
       Attribute.NsImport("", XmppConstants.names.jabber.client.ns),
       Attribute.Unprefixed("type", "result"),
       Attribute.Unprefixed("id", "test")
     ), Seq()))))
   }
 
-  it should "return None upon non-IQ FQN" in {
-    IQ.fromXml(xml("<iq xmlns='invalid' type='get' id='test' />")) should be (None)
+  it should "return Failure(...) upon non-IQ FQN" in {
+    IQ.fromXml(xml("<iq xmlns='invalid' type='get' id='test' />")).isFailure should be (true)
   }
 
-  it should "return None upon non-IQ type-attribute value" in {
-    IQ.fromXml(xml("<iq xmlns='jabber:client' type='invalid' id='test' />")) should be (None)
+  it should "return Failure(...) upon non-IQ type-attribute value" in {
+    IQ.fromXml(xml("<iq xmlns='jabber:client' type='invalid' id='test' />")).isFailure should be (true)
   }
 
   "IQ.create" should "#1" in {

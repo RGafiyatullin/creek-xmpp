@@ -6,6 +6,8 @@ import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
 import com.github.rgafiyatullin.creek_xmpp.protocol.jid.Jid
 import org.scalatest.{FlatSpec, Matchers}
 
+import scala.util.Success
+
 class MessageSpec extends FlatSpec with Matchers with XmlFromStringHelper {
   "Message.Type" should "render/parse" in {
     Seq(
@@ -19,20 +21,20 @@ class MessageSpec extends FlatSpec with Matchers with XmlFromStringHelper {
     }
   }
 
-  "Message.fromXml" should "return Some(message)" in {
-    Message.fromXml(xml("<message xmlns='jabber:client' type='groupchat' id='test' />")) should be (Some(Message(Element(XmppConstants.names.jabber.client.message, Seq(
+  "Message.fromXml" should "return Success(message)" in {
+    Message.fromXml(xml("<message xmlns='jabber:client' type='groupchat' id='test' />")) should be (Success(Message(Element(XmppConstants.names.jabber.client.message, Seq(
       Attribute.NsImport("", XmppConstants.names.jabber.client.ns),
       Attribute.Unprefixed("type", "groupchat"),
       Attribute.Unprefixed("id", "test")
     ), Seq()))))
   }
 
-  it should "return None upon non-Message FQN" in {
-    IQ.fromXml(xml("<message xmlns='invalid' type='groupchat' id='test' />")) should be (None)
+  it should "return Failure(...) upon non-Message FQN" in {
+    IQ.fromXml(xml("<message xmlns='invalid' type='groupchat' id='test' />")).isFailure should be (true)
   }
 
-  it should "return None upon non-Message type-attribute value" in {
-    IQ.fromXml(xml("<message xmlns='jabber:client' type='invalid' id='test' />")) should be (None)
+  it should "return Failure(...) upon non-Message type-attribute value" in {
+    IQ.fromXml(xml("<message xmlns='jabber:client' type='invalid' id='test' />")).isFailure should be (true)
   }
 
   "Message.create" should "#1" in {

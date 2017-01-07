@@ -5,10 +5,12 @@ import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
 import com.github.rgafiyatullin.creek_xmpp.protocol.stanza.{Stanza, StanzaFromXml}
 import com.github.rgafiyatullin.creek_xmpp.protocol.stream_error.XmppStreamError
 
+import scala.util.Try
+
 object StreamError extends StanzaFromXml[StreamError] {
   private val qn = XmppConstants.names.streams.error
 
-  override def fromXml(xml: Node): Option[StreamError] =
+  override def fromXml(xml: Node): Try[StreamError] =
     validateXml(xml, StreamError(xml))(
       qName = Some(XmppConstants.names.streams.error))
 

@@ -1,14 +1,39 @@
 package com.github.rgafiyatullin.creek_xmpp.protocol.stream_error
 
+import com.github.rgafiyatullin.creek_xmpp.protocol.stream_error.XmppStreamError.Internals
+
 sealed trait XmppStreamError extends Throwable {
-  def reason: Option[Throwable] = None
+  def reason: Option[Throwable]
+  def withReason(r: Throwable): XmppStreamError
+  def withReason(ro: Option[Throwable]): XmppStreamError
+
+
+  def text: Option[String]
+  def withText(t: String): XmppStreamError
+  def withText(to: Option[String]): XmppStreamError
+
   def definedCondition: String
 
   override def toString: String =
     "XmppStreamError(%s): %s".format(definedCondition, reason)
 }
 
+sealed trait XmppStreamErrorBase[T <: XmppStreamErrorBase[T]] extends XmppStreamError {
+  val internals: Internals
+  def withInternals(i: Internals): T
+
+  override def reason: Option[Throwable] = internals.reasonOption
+  override def withReason(r: Throwable): T = withReason(Some(r))
+  override def withReason(ro: Option[Throwable]): T = withInternals(internals.copy(reasonOption = ro))
+
+  override def text: Option[String] = internals.textOption
+  override def withText(t: String): T = withText(Some(t))
+  override def withText(to: Option[String]): T = withInternals(internals.copy(textOption = to))
+}
+
 object XmppStreamError {
+  final case class Internals(reasonOption: Option[Throwable] = None, textOption: Option[String] = None)
+
 
   object conditions {
     val badFormat = "bad-format"
@@ -38,32 +63,32 @@ object XmppStreamError {
     val unsupportedVersion = "unsupported-version"
   }
 
-  val fromDefinedCondition: PartialFunction[String, (Option[Throwable]) => XmppStreamError] = {
-    case conditions.badFormat => BadFormat(_)
-    case conditions.badNamespacePrefix => BadNamespacePrefix(_)
-    case conditions.conflict => Conflict(_)
-    case conditions.connectionTimeout => ConnectionTimeout(_)
-    case conditions.hostGone => HostGone(_)
-    case conditions.hostUnknown => HostUnknown(_)
-    case conditions.improperAddressing => ImproperAddressing(_)
-    case conditions.internalServerError => InternalServerError(_)
-    case conditions.invalidFrom => InvalidFrom(_)
-    case conditions.invalidNamespace => InvalidNamespace(_)
-    case conditions.invalidXml => InvalidXml(_)
-    case conditions.notAuthorized => NotAuthorized(_)
-    case conditions.notWellFormed => NotWellFormed(_)
-    case conditions.policyViolation => PolicyViolation(_)
-    case conditions.remoteConnectionFailed => RemoteConnectionFailed(_)
-    case conditions.reset => Reset(_)
-    case conditions.resourceConstraint => ResourceConstraint(_)
-    case conditions.restrictedXml => RestrictedXml(_)
-    case conditions.seeOtherHost => SeeOtherHost("", _: Option[Throwable]) // FIXME: should we do something with that?
-    case conditions.systemShutdown => SystemShutdown(_)
-    case conditions.undefinedCondition => UndefinedCondition(_)
-    case conditions.unsupportedEncoding => UnsupportedEncoding(_)
-    case conditions.unsupportedFeature => UnsupportedFeature(_)
-    case conditions.unsupportedStanzaType => UnsupportedStanzaType(_)
-    case conditions.unsupportedVersion => UnsupportedVersion(_)
+  val fromDefinedCondition: PartialFunction[String, XmppStreamError] = {
+    case conditions.badFormat => BadFormat()
+    case conditions.badNamespacePrefix => BadNamespacePrefix()
+    case conditions.conflict => Conflict()
+    case conditions.connectionTimeout => ConnectionTimeout()
+    case conditions.hostGone => HostGone()
+    case conditions.hostUnknown => HostUnknown()
+    case conditions.improperAddressing => ImproperAddressing()
+    case conditions.internalServerError => InternalServerError()
+    case conditions.invalidFrom => InvalidFrom()
+    case conditions.invalidNamespace => InvalidNamespace()
+    case conditions.invalidXml => InvalidXml()
+    case conditions.notAuthorized => NotAuthorized()
+    case conditions.notWellFormed => NotWellFormed()
+    case conditions.policyViolation => PolicyViolation()
+    case conditions.remoteConnectionFailed => RemoteConnectionFailed()
+    case conditions.reset => Reset()
+    case conditions.resourceConstraint => ResourceConstraint()
+    case conditions.restrictedXml => RestrictedXml()
+    case conditions.seeOtherHost => SeeOtherHost("") // FIXME: should we do something with that?
+    case conditions.systemShutdown => SystemShutdown()
+    case conditions.undefinedCondition => UndefinedCondition()
+    case conditions.unsupportedEncoding => UnsupportedEncoding()
+    case conditions.unsupportedFeature => UnsupportedFeature()
+    case conditions.unsupportedStanzaType => UnsupportedStanzaType()
+    case conditions.unsupportedVersion => UnsupportedVersion()
   }
 
 
@@ -77,10 +102,10 @@ object XmppStreamError {
     *
     * The entity has sent XML that cannot be processed.
     *
-    * @param reason underlying exception
     */
-  final case class BadFormat(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class BadFormat(internals: Internals = Internals()) extends XmppStreamErrorBase[BadFormat] {
     override def definedCondition: String = XmppStreamError.conditions.badFormat
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -89,10 +114,10 @@ object XmppStreamError {
     * The entity has sent a namespace prefix that is unsupported,
     * or has sent no namespace prefix on an element that needs such a prefix
     *
-    * @param reason underlying exception
     */
-  final case class BadNamespacePrefix(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class BadNamespacePrefix(internals: Internals = Internals()) extends XmppStreamErrorBase[BadNamespacePrefix] {
     override def definedCondition: String = XmppStreamError.conditions.badNamespacePrefix
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -103,10 +128,10 @@ object XmppStreamError {
     * (e.g., because the server allows only a certain number of connections from the same IP address or allows only one server-to-server stream for a given domain pair as a way
     * of helping to ensure in-order processing as described under Section 10.1).
     *
-    * @param reason underlying exception
     */
-  final case class Conflict(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class Conflict(internals: Internals = Internals()) extends XmppStreamErrorBase[Conflict] {
     override def definedCondition: String = XmppStreamError.conditions.conflict
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -117,10 +142,10 @@ object XmppStreamError {
     * The lack of ability to communicate can be discovered using various methods, such as whitespace keepalives as specified under Section 4.4,
     * XMPP-level pings as defined in [XEP‑0199], and XMPP Stream Management as defined in [XEP‑0198].
     *
-    * @param reason underlying exception
     */
-  final case class ConnectionTimeout(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class ConnectionTimeout(internals: Internals = Internals()) extends XmppStreamErrorBase[ConnectionTimeout] {
     override def definedCondition: String = XmppStreamError.conditions.connectionTimeout
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -129,10 +154,10 @@ object XmppStreamError {
     * The value of the 'to' attribute provided in the initial stream header corresponds to an FQDN
     * that is no longer serviced by the receiving entity.
     *
-    * @param reason underlying exception
     */
-  final case class HostGone(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class HostGone(internals: Internals = Internals()) extends XmppStreamErrorBase[HostGone] {
     override def definedCondition: String = XmppStreamError.conditions.hostGone
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -141,10 +166,10 @@ object XmppStreamError {
     * The value of the 'to' attribute provided in the initial stream header does not correspond to an FQDN
     * that is serviced by the receiving entity.
     *
-    * @param reason underlying exception
     */
-  final case class HostUnknown(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class HostUnknown(internals: Internals = Internals()) extends XmppStreamErrorBase[HostUnknown] {
     override def definedCondition: String = XmppStreamError.conditions.hostUnknown
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -153,10 +178,10 @@ object XmppStreamError {
     * A stanza sent between two servers lacks a 'to' or 'from' attribute, the 'from' or 'to' attribute has no value,
     * or the value violates the rules for XMPP addresses [XMPP‑ADDR].
     *
-    * @param reason underlying exception
     */
-  final case class ImproperAddressing(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class ImproperAddressing(internals: Internals = Internals()) extends XmppStreamErrorBase[ImproperAddressing] {
     override def definedCondition: String = XmppStreamError.conditions.improperAddressing
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -164,10 +189,10 @@ object XmppStreamError {
     *
     * The server has experienced a misconfiguration or other internal error that prevents it from servicing the stream.
     *
-    * @param reason underlying exception
     */
-  final case class InternalServerError(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class InternalServerError(internals: Internals = Internals()) extends XmppStreamErrorBase[InternalServerError] {
     override def definedCondition: String = XmppStreamError.conditions.internalServerError
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -177,10 +202,10 @@ object XmppStreamError {
     * between two servers using SASL or Server Dialback, or (2) between a client and a server via
     * SASL authentication and resource binding.
     *
-    * @param reason underlying exception
     */
-  final case class InvalidFrom(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class InvalidFrom(internals: Internals = Internals()) extends XmppStreamErrorBase[InvalidFrom] {
     override def definedCondition: String = XmppStreamError.conditions.invalidFrom
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -190,10 +215,10 @@ object XmppStreamError {
     * the content namespace declared as the default namespace is not supported
     * (e.g., something other than "jabber:client" or "jabber:server").
     *
-    * @param reason underlying exception
     */
-  final case class InvalidNamespace(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class InvalidNamespace(internals: Internals = Internals()) extends XmppStreamErrorBase[InvalidNamespace] {
     override def definedCondition: String = XmppStreamError.conditions.invalidNamespace
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -201,10 +226,10 @@ object XmppStreamError {
     *
     * The entity has sent invalid XML over the stream to a server that performs validation
     *
-    * @param reason underlying exception
     */
-  final case class InvalidXml(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class InvalidXml(internals: Internals = Internals()) extends XmppStreamErrorBase[InvalidXml] {
     override def definedCondition: String = XmppStreamError.conditions.invalidXml
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -214,10 +239,10 @@ object XmppStreamError {
     * or otherwise is not authorized to perform an action related to stream negotiation; the receiving entity
     * MUST NOT process the offending data before sending the stream error.
     *
-    * @param reason underlying exception
     */
-  final case class NotAuthorized(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class NotAuthorized(internals: Internals = Internals()) extends XmppStreamErrorBase[NotAuthorized] {
     override def definedCondition: String = XmppStreamError.conditions.notAuthorized
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -225,10 +250,10 @@ object XmppStreamError {
     *
     * The initiating entity has sent XML that violates the well-formedness rules of [XML] or [XML‑NAMES].
     *
-    * @param reason underlying exception
     */
-  final case class NotWellFormed(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class NotWellFormed(internals: Internals = Internals()) extends XmppStreamErrorBase[NotWellFormed] {
     override def definedCondition: String = XmppStreamError.conditions.notWellFormed
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -237,10 +262,10 @@ object XmppStreamError {
     * The entity has violated some local service policy (e.g., a stanza exceeds a configured size limit);
     * the server MAY choose to specify the policy in the <text/> element or in an application-specific condition element.
     *
-    * @param reason underlying exception
     */
-  final case class PolicyViolation(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class PolicyViolation(internals: Internals = Internals()) extends XmppStreamErrorBase[PolicyViolation] {
     override def definedCondition: String = XmppStreamError.conditions.policyViolation
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -251,10 +276,10 @@ object XmppStreamError {
     * cause of the error is within the administrative domain of the XMPP service provider, in which case the
     * "internal-server-error" condition is more appropriate.
     *
-    * @param reason underlying exception
     */
-  final case class RemoteConnectionFailed(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class RemoteConnectionFailed(internals: Internals = Internals()) extends XmppStreamErrorBase[RemoteConnectionFailed] {
     override def definedCondition: String = XmppStreamError.conditions.remoteConnectionFailed
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -268,10 +293,10 @@ object XmppStreamError {
     * which means that encryption and authentication need to be negotiated again for the new stream
     * (e.g., TLS session resumption cannot be used).
     *
-    * @param reason underlying exception
     */
-  final case class Reset(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class Reset(internals: Internals = Internals()) extends XmppStreamErrorBase[Reset] {
     override def definedCondition: String = XmppStreamError.conditions.reset
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -279,10 +304,10 @@ object XmppStreamError {
     *
     * The server lacks the system resources necessary to service the stream.
     *
-    * @param reason underlying exception
     */
-  final case class ResourceConstraint(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class ResourceConstraint(internals: Internals = Internals()) extends XmppStreamErrorBase[ResourceConstraint] {
     override def definedCondition: String = XmppStreamError.conditions.resourceConstraint
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -291,10 +316,10 @@ object XmppStreamError {
     * The entity has attempted to send restricted XML features such as a comment,
     * processing instruction, DTD subset, or XML entity reference (see Section 11.1).
     *
-    * @param reason underlying exception
     */
-  final case class RestrictedXml(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class RestrictedXml(internals: Internals = Internals()) extends XmppStreamErrorBase[RestrictedXml] {
     override def definedCondition: String = XmppStreamError.conditions.restrictedXml
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -312,11 +337,11 @@ object XmppStreamError {
     * square brackets '[' and ']' as originally defined by [URI].) Otherwise, the initiating entity MUST resolve
     * the FQDN specified in the "see-other-host" element as described under Section 3.2.
     *
-    * @param otherHost the host to proceed to
-    * @param reason    underlying exception
     */
-  final case class SeeOtherHost(otherHost: String, override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class SeeOtherHost(otherHost: String, internals: Internals = Internals()) extends XmppStreamErrorBase[SeeOtherHost] {
     override def definedCondition: String = XmppStreamError.conditions.seeOtherHost
+    def withOtherHost(oh: String): SeeOtherHost = copy(otherHost = oh)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -324,10 +349,10 @@ object XmppStreamError {
     *
     * The server is being shut down and all active streams are being closed.
     *
-    * @param reason underlying exception
     */
-  final case class SystemShutdown(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class SystemShutdown(internals: Internals = Internals()) extends XmppStreamErrorBase[SystemShutdown] {
     override def definedCondition: String = XmppStreamError.conditions.systemShutdown
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -336,10 +361,10 @@ object XmppStreamError {
     * The error condition is not one of those defined by the other conditions in this list;
     * this error condition SHOULD NOT be used except in conjunction with an application-specific condition.
     *
-    * @param reason underlying exception
     */
-  final case class UndefinedCondition(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class UndefinedCondition(internals: Internals = Internals()) extends XmppStreamErrorBase[UndefinedCondition] {
     override def definedCondition: String = XmppStreamError.conditions.undefinedCondition
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -348,10 +373,10 @@ object XmppStreamError {
     * The initiating entity has encoded the stream in an encoding that is not supported by the server (see Section 11.6)
     * or has otherwise improperly encoded the stream (e.g., by violating the rules of the [UTF‑8] encoding).
     *
-    * @param reason underlying exception
     */
-  final case class UnsupportedEncoding(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class UnsupportedEncoding(internals: Internals = Internals()) extends XmppStreamErrorBase[UnsupportedEncoding] {
     override def definedCondition: String = XmppStreamError.conditions.unsupportedEncoding
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -360,10 +385,10 @@ object XmppStreamError {
     * The receiving entity has advertised a mandatory-to-negotiate stream feature that the initiating entity does
     * not support, and has offered no other mandatory-to-negotiate feature alongside the unsupported feature.
     *
-    * @param reason underlying exception
     */
-  final case class UnsupportedFeature(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class UnsupportedFeature(internals: Internals = Internals()) extends XmppStreamErrorBase[UnsupportedFeature] {
     override def definedCondition: String = XmppStreamError.conditions.unsupportedFeature
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -374,10 +399,10 @@ object XmppStreamError {
     * does not understand the element name for the applicable namespace
     * (which might be the content namespace declared as the default namespace).
     *
-    * @param reason underlying exception
     */
-  final case class UnsupportedStanzaType(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class UnsupportedStanzaType(internals: Internals = Internals()) extends XmppStreamErrorBase[UnsupportedStanzaType] {
     override def definedCondition: String = XmppStreamError.conditions.unsupportedStanzaType
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -386,10 +411,10 @@ object XmppStreamError {
     * The 'version' attribute provided by the initiating entity in the stream header specifies
     * a version of XMPP that is not supported by the server.
     *
-    * @param reason underlying exception
     */
-  final case class UnsupportedVersion(override val reason: Option[Throwable] = None) extends XmppStreamError {
+  final case class UnsupportedVersion(internals: Internals = Internals()) extends XmppStreamErrorBase[UnsupportedVersion] {
     override def definedCondition: String = XmppStreamError.conditions.unsupportedVersion
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 }

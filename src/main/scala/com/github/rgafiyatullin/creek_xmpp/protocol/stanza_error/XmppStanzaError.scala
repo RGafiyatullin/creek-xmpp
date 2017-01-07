@@ -6,16 +6,21 @@ import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
 import com.github.rgafiyatullin.creek_xml.dom_query.Implicits._
 import com.github.rgafiyatullin.creek_xml.dom_query.Predicate
 import com.github.rgafiyatullin.creek_xmpp.protocol.stanza.Stanza
-import com.github.rgafiyatullin.creek_xmpp.protocol.stream_error.XmppStreamError
+import com.github.rgafiyatullin.creek_xmpp.protocol.stanza_error.XmppStanzaError.Internals
 
 sealed trait XmppStanzaError extends Throwable {
-  def reason: Option[Throwable] = None
   def definedCondition: String
-  def errorType: XmppStanzaErrorType
-  def text: Option[String] = None
 
+  def errorType: XmppStanzaErrorType
+  def withErrorType(t: XmppStanzaErrorType): XmppStanzaError
+
+  def reason: Option[Throwable]
+  def withReason(r: Throwable): XmppStanzaError
+  def withReason(ro: Option[Throwable]): XmppStanzaError
+
+  def text: Option[String]
   def withText(t: String): XmppStanzaError
-  def withText(t: Option[String]): XmppStanzaError
+  def withText(to: Option[String]): XmppStanzaError
 
   override def toString: String =
     text match {
@@ -24,7 +29,6 @@ sealed trait XmppStanzaError extends Throwable {
       case Some(textDefined) =>
         "XmppStanzaError(%s, \"%s\"): %s".format(definedCondition, textDefined, reason)
     }
-
   def toXml: Element = {
     val noText = Element(
       XmppConstants.names.jabber.client.error,
@@ -46,7 +50,28 @@ sealed trait XmppStanzaError extends Throwable {
   }
 }
 
+sealed trait XmppStanzaErrorBase[T <: XmppStanzaErrorBase[T]] extends XmppStanzaError {
+  val internals: Internals
+  def withInternals(i: Internals): T
+
+  override def errorType: XmppStanzaErrorType = internals.stanzaErrorType
+  override def withErrorType(t: XmppStanzaErrorType): T = withInternals(internals.copy(stanzaErrorType = t))
+
+  override def reason: Option[Throwable] = internals.reasonOption
+  override def withReason(r: Throwable): T = withReason(Some(r))
+  override def withReason(ro: Option[Throwable]): T = withInternals(internals.copy(reasonOption = ro))
+
+  override def text: Option[String] = internals.textOption
+  override def withText(t: String): T = withText(Some(t))
+  override def withText(to: Option[String]): T = withInternals(internals.copy(textOption = to))
+}
+
 object XmppStanzaError {
+  final case class Internals(
+    stanzaErrorType: XmppStanzaErrorType,
+    reasonOption: Option[Throwable] = None,
+    textOption: Option[String] = None)
+
 
   def fromStanza(stanza: Stanza[_]): Option[XmppStanzaError] =
     fromStanza(stanza.xml)
@@ -62,11 +87,13 @@ object XmppStanzaError {
       None
     else for {
       conditionNode <- errorNode.children.headOption if conditionNode.qName.ns == XmppConstants.names.urn.ietf.params.xmlNs.xmppStanzas.ns
-      stanzaErrorCreateFunc <- fromDefinedCondition.lift(conditionNode.qName.localName)
-      stanzaErrorType = errorNode.attribute("type").flatMap(XmppStanzaErrorType.fromString.lift).getOrElse(XmppStanzaErrorType.Cancel)
-      maybeTextNode = (errorNode select xs.text).headOption
+      stanzaError <- fromDefinedCondition.lift(conditionNode.qName.localName)
+      stanzaErrorType = errorNode.attribute("type").flatMap(XmppStanzaErrorType.fromString.lift).getOrElse(stanzaError.errorType)
+      maybeText = (errorNode select xs.text).headOption.map(_.text)
     }
-      yield stanzaErrorCreateFunc(None, stanzaErrorType).withText(maybeTextNode.map(_.text))
+      yield stanzaError
+        .withErrorType(stanzaErrorType)
+        .withText(maybeText)
   }
 
   object conditions {
@@ -94,29 +121,29 @@ object XmppStanzaError {
     val unexpectedRequest = "unexpected-request"
   }
 
-  val fromDefinedCondition: PartialFunction[String, (Option[Throwable], XmppStanzaErrorType) => XmppStanzaError] = {
-    case conditions.badRequest => BadRequest(_, _)
-    case conditions.conflict => Conflict(_, _)
-    case conditions.featureNotImplemented => FeatureNotImplemented(_, _)
-    case conditions.forbidden => Forbidden(_, _)
-    case conditions.gone => Gone(_, _)
-    case conditions.internalServerError => InternalServerError(_, _)
-    case conditions.itemNotFound => ItemNotFound(_, _)
-    case conditions.jidMalformed => JidMalformed(_, _)
-    case conditions.notAcceptable => NotAcceptable(_, _)
-    case conditions.notAllowed => NotAllowed(_, _)
-    case conditions.notAuthorized => NotAuthorized(_, _)
-    case conditions.policyViolation => PolicyViolation(_, _)
-    case conditions.recipientUnavailable => RecipientUnavailable(_, _)
-    case conditions.redirect => Redirect(_, _)
-    case conditions.registrationRequired => RegistrationRequired(_, _)
-    case conditions.remoteServerNotFound => RemoteServerNotFound(_, _)
-    case conditions.remoteServerTimeout => RemoteServerTimeout(_, _)
-    case conditions.resourceConstraint => ResourceConstraint(_, _)
-    case conditions.serviceUnavailable => ServiceUnavailable(_, _)
-    case conditions.subscriptionRequired => SubscriptionRequired(_, _)
-    case conditions.undefinedCondition => UndefinedCondition(_, _)
-    case conditions.unexpectedRequest => UnexpectedRequest(_, _)
+  val fromDefinedCondition: PartialFunction[String, XmppStanzaError] = {
+    case conditions.badRequest => BadRequest()
+    case conditions.conflict => Conflict()
+    case conditions.featureNotImplemented => FeatureNotImplemented()
+    case conditions.forbidden => Forbidden()
+    case conditions.gone => Gone()
+    case conditions.internalServerError => InternalServerError()
+    case conditions.itemNotFound => ItemNotFound()
+    case conditions.jidMalformed => JidMalformed()
+    case conditions.notAcceptable => NotAcceptable()
+    case conditions.notAllowed => NotAllowed()
+    case conditions.notAuthorized => NotAuthorized()
+    case conditions.policyViolation => PolicyViolation()
+    case conditions.recipientUnavailable => RecipientUnavailable()
+    case conditions.redirect => Redirect()
+    case conditions.registrationRequired => RegistrationRequired()
+    case conditions.remoteServerNotFound => RemoteServerNotFound()
+    case conditions.remoteServerTimeout => RemoteServerTimeout()
+    case conditions.resourceConstraint => ResourceConstraint()
+    case conditions.serviceUnavailable => ServiceUnavailable()
+    case conditions.subscriptionRequired => SubscriptionRequired()
+    case conditions.undefinedCondition => UndefinedCondition()
+    case conditions.unexpectedRequest => UnexpectedRequest()
   }
 
 
@@ -128,17 +155,12 @@ object XmppStanzaError {
     * is qualified by a recognized namespace but that violates the defined syntax for the element);
     * the associated error type SHOULD be "modify".
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class BadRequest(
-                               override val reason: Option[Throwable] = None,
-                               override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Modify,
-                               override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class BadRequest(internals: Internals = Internals(XmppStanzaErrorType.Modify))
+    extends XmppStanzaErrorBase[BadRequest]
+  {
     def definedCondition = XmppStanzaError.conditions.badRequest
-    def withText(t: String): BadRequest = withText(Some(t))
-    def withText(t: Option[String]): BadRequest = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -147,18 +169,12 @@ object XmppStanzaError {
     *
     * Access cannot be granted because an existing resource exists with the same name or address;
     * the associated error type SHOULD be "cancel".
-    *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class Conflict(
-                             override val reason: Option[Throwable] = None,
-                             override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
-                             override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class Conflict(internals: Internals = Internals(XmppStanzaErrorType.Cancel))
+    extends XmppStanzaErrorBase[Conflict]
+  {
     def definedCondition = XmppStanzaError.conditions.conflict
-    def withText(t: String): Conflict = withText(Some(t))
-    def withText(t: Option[String]): Conflict = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -168,18 +184,12 @@ object XmppStanzaError {
     * The feature represented in the XML stanza is not implemented by the intended recipient or an intermediate server
     * and therefore the stanza cannot be processed (e.g., the entity understands the namespace but does not recognize
     * the element name); the associated error type SHOULD be "cancel" or "modify".
-    *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class FeatureNotImplemented(
-                                          override val reason: Option[Throwable] = None,
-                                          override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
-                                          override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class FeatureNotImplemented(internals: Internals = Internals(XmppStanzaErrorType.Cancel))
+    extends XmppStanzaErrorBase[FeatureNotImplemented]
+  {
     def definedCondition = XmppStanzaError.conditions.featureNotImplemented
-    def withText(t: String): FeatureNotImplemented = withText(Some(t))
-    def withText(t: Option[String]): FeatureNotImplemented = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -189,18 +199,12 @@ object XmppStanzaError {
     * The requesting entity does not possess the necessary permissions to perform an action that only certain authorized
     * roles or individuals are allowed to complete (i.e., it typically relates to authorization rather than
     * authentication); the associated error type SHOULD be "auth".
-    *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class Forbidden(
-                              override val reason: Option[Throwable] = None,
-                              override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Auth,
-                              override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class Forbidden(internals: Internals = Internals(XmppStanzaErrorType.Auth))
+    extends XmppStanzaErrorBase[Forbidden]
+  {
     def definedCondition = XmppStanzaError.conditions.forbidden
-    def withText(t: String): Forbidden = withText(Some(t))
-    def withText(t: Option[String]): Forbidden = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -213,19 +217,11 @@ object XmppStanzaError {
     * (if available) as the XML character data of the "gone" element (which MUST be a Uniform Resource Identifier [URI]
     * or Internationalized Resource Identifier [IRI] at which the entity can be contacted,
     * typically an XMPP IRI as specified in [XMPP‑URI]).
-    *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class Gone(
-                         override val reason: Option[Throwable] = None,
-                         override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
-                         override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class Gone(internals: Internals = Internals(XmppStanzaErrorType.Cancel))
+    extends XmppStanzaErrorBase[Gone] {
     def definedCondition = XmppStanzaError.conditions.gone
-    def withText(t: String): Gone = withText(Some(t))
-    def withText(t: Option[String]): Gone = copy(text = t)
-
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -235,17 +231,11 @@ object XmppStanzaError {
     * The server has experienced a misconfiguration or other internal error that prevents it from processing the stanza;
     * the associated error type SHOULD be "cancel".
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class InternalServerError(
-                                        override val reason: Option[Throwable] = None,
-                                        override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
-                                        override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class InternalServerError(internals: Internals = Internals(XmppStanzaErrorType.Cancel))
+    extends XmppStanzaErrorBase[InternalServerError] {
     def definedCondition = XmppStanzaError.conditions.internalServerError
-    def withText(t: String): InternalServerError = withText(Some(t))
-    def withText(t: Option[String]): InternalServerError = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -254,17 +244,11 @@ object XmppStanzaError {
     *
     * The addressed JID or item requested cannot be found; the associated error type SHOULD be "cancel".
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class ItemNotFound(
-                                 override val reason: Option[Throwable] = None,
-                                 override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
-                                 override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class ItemNotFound(internals: Internals = Internals(XmppStanzaErrorType.Cancel))
+    extends XmppStanzaErrorBase[ItemNotFound] {
     def definedCondition = XmppStanzaError.conditions.itemNotFound
-    def withText(t: String): ItemNotFound = withText(Some(t))
-    def withText(t: Option[String]): ItemNotFound = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -275,17 +259,11 @@ object XmppStanzaError {
     * (e.g., in the 'to' address of a stanza) an XMPP address or aspect thereof that violates the rules defined
     * in [XMPP‑ADDR]; the associated error type SHOULD be "modify".
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class JidMalformed(
-                                 override val reason: Option[Throwable] = None,
-                                 override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Modify,
-                                 override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class JidMalformed(internals: Internals = Internals(XmppStanzaErrorType.Modify))
+    extends XmppStanzaErrorBase[JidMalformed] {
     def definedCondition = XmppStanzaError.conditions.jidMalformed
-    def withText(t: String): JidMalformed = withText(Some(t))
-    def withText(t: Option[String]): JidMalformed = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -296,17 +274,11 @@ object XmppStanzaError {
     * defined by the recipient or server (e.g., a request to subscribe to information that does not simultaneously
     * include configuration parameters needed by the recipient); the associated error type SHOULD be "modify".
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class NotAcceptable(
-                                  override val reason: Option[Throwable] = None,
-                                  override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Modify,
-                                  override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class NotAcceptable(internals: Internals = Internals(XmppStanzaErrorType.Modify))
+    extends XmppStanzaErrorBase[NotAcceptable] {
     def definedCondition = XmppStanzaError.conditions.notAcceptable
-    def withText(t: String): NotAcceptable = withText(Some(t))
-    def withText(t: Option[String]): NotAcceptable = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -316,17 +288,11 @@ object XmppStanzaError {
     * The recipient or server does not allow any entity to perform the action
     * (e.g., sending to entities at a blacklisted domain); the associated error type SHOULD be "cancel".
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class NotAllowed(
-                               override val reason: Option[Throwable] = None,
-                               override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
-                               override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class NotAllowed(internals: Internals = Internals(XmppStanzaErrorType.Cancel))
+    extends XmppStanzaErrorBase[NotAllowed] {
     def definedCondition = XmppStanzaError.conditions.notAllowed
-    def withText(t: String): NotAllowed = withText(Some(t))
-    def withText(t: Option[String]): NotAllowed = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -338,17 +304,11 @@ object XmppStanzaError {
     * error of [HTTP], might lead the reader to think that this condition relates to authorization,
     * but instead it is typically used in relation to authentication); the associated error type SHOULD be "auth".
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class NotAuthorized(
-                                  override val reason: Option[Throwable] = None,
-                                  override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Auth,
-                                  override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class NotAuthorized(internals: Internals = Internals(XmppStanzaErrorType.Auth))
+    extends XmppStanzaErrorBase[NotAuthorized] {
     def definedCondition = XmppStanzaError.conditions.notAuthorized
-    def withText(t: String): NotAuthorized = withText(Some(t))
-    def withText(t: Option[String]): NotAuthorized = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -360,17 +320,11 @@ object XmppStanzaError {
     * in the "text" element or in an application-specific condition element;
     * the associated error type SHOULD be "modify" or "wait" depending on the policy being violated.
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class PolicyViolation(
-                                    override val reason: Option[Throwable] = None,
-                                    override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Modify,
-                                    override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class PolicyViolation(internals: Internals = Internals(XmppStanzaErrorType.Modify))
+    extends XmppStanzaErrorBase[PolicyViolation] {
     def definedCondition = XmppStanzaError.conditions.policyViolation
-    def withText(t: String): PolicyViolation = withText(Some(t))
-    def withText(t: Option[String]): PolicyViolation = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -380,17 +334,11 @@ object XmppStanzaError {
     * The intended recipient is temporarily unavailable, undergoing maintenance, etc.;
     * the associated error type SHOULD be "wait".
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class RecipientUnavailable(
-                                         override val reason: Option[Throwable] = None,
-                                         override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Wait,
-                                         override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class RecipientUnavailable(internals: Internals = Internals(XmppStanzaErrorType.Wait))
+    extends XmppStanzaErrorBase[RecipientUnavailable] {
     def definedCondition = XmppStanzaError.conditions.recipientUnavailable
-    def withText(t: String): RecipientUnavailable = withText(Some(t))
-    def withText(t: Option[String]): RecipientUnavailable = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -400,17 +348,11 @@ object XmppStanzaError {
     * The intended recipient is temporarily unavailable, undergoing maintenance, etc.;
     * the associated error type SHOULD be "wait".
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class Redirect(
-                             override val reason: Option[Throwable] = None,
-                             override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Wait,
-                             override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class Redirect(internals: Internals = Internals(XmppStanzaErrorType.Wait))
+    extends XmppStanzaErrorBase[Redirect] {
     def definedCondition = XmppStanzaError.conditions.redirect
-    def withText(t: String): Redirect = withText(Some(t))
-    def withText(t: Option[String]): Redirect = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -422,17 +364,11 @@ object XmppStanzaError {
     * non-XMPP instant messaging services, which traditionally required registration in order to use the gateway
     * [XEP‑0100]); the associated error type SHOULD be "auth".
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class RegistrationRequired(
-                                         override val reason: Option[Throwable] = None,
-                                         override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Auth,
-                                         override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class RegistrationRequired(internals: Internals = Internals(XmppStanzaErrorType.Auth))
+    extends XmppStanzaErrorBase[RegistrationRequired] {
     def definedCondition = XmppStanzaError.conditions.registrationRequired
-    def withText(t: String): RegistrationRequired = withText(Some(t))
-    def withText(t: Option[String]): RegistrationRequired = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -444,17 +380,11 @@ object XmppStanzaError {
     * or A/AAAA lookups succeed but there is no response on the IANA-registered port 5269);
     * the associated error type SHOULD be "cancel".
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class RemoteServerNotFound(
-                                         override val reason: Option[Throwable] = None,
-                                         override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
-                                         override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class RemoteServerNotFound(internals: Internals = Internals(XmppStanzaErrorType.Cancel))
+    extends XmppStanzaErrorBase[RemoteServerNotFound] {
     def definedCondition = XmppStanzaError.conditions.remoteServerNotFound
-    def withText(t: String): RemoteServerNotFound = withText(Some(t))
-    def withText(t: Option[String]): RemoteServerNotFound = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -467,17 +397,11 @@ object XmppStanzaError {
     * Server Dialback, etc.); the associated error type SHOULD be "wait" (unless the error is of a more permanent
     * nature, e.g., the remote server is found but it cannot be authenticated or it violates security policies).
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class RemoteServerTimeout(
-                                        override val reason: Option[Throwable] = None,
-                                        override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Wait,
-                                        override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class RemoteServerTimeout(internals: Internals = Internals(XmppStanzaErrorType.Wait))
+    extends XmppStanzaErrorBase[RemoteServerTimeout] {
     def definedCondition = XmppStanzaError.conditions.remoteServerTimeout
-    def withText(t: String): RemoteServerTimeout = withText(Some(t))
-    def withText(t: Option[String]): RemoteServerTimeout = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 
@@ -487,17 +411,11 @@ object XmppStanzaError {
     * The server or recipient is busy or lacks the system resources necessary to service the request;
     * the associated error type SHOULD be "wait".
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class ResourceConstraint(
-                                       override val reason: Option[Throwable] = None,
-                                       override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Wait,
-                                       override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class ResourceConstraint(internals: Internals = Internals(XmppStanzaErrorType.Wait))
+    extends XmppStanzaErrorBase[ResourceConstraint] {
     def definedCondition = XmppStanzaError.conditions.resourceConstraint
-    def withText(t: String): ResourceConstraint = withText(Some(t))
-    def withText(t: Option[String]): ResourceConstraint = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -506,17 +424,11 @@ object XmppStanzaError {
     * The server or recipient does not currently provide the requested service;
     * the associated error type SHOULD be "cancel".
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class ServiceUnavailable(
-                                       override val reason: Option[Throwable] = None,
-                                       override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
-                                       override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class ServiceUnavailable(internals: Internals = Internals(XmppStanzaErrorType.Cancel))
+    extends XmppStanzaErrorBase[ServiceUnavailable] {
     def definedCondition = XmppStanzaError.conditions.serviceUnavailable
-    def withText(t: String): ServiceUnavailable = withText(Some(t))
-    def withText(t: Option[String]): ServiceUnavailable = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -527,17 +439,11 @@ object XmppStanzaError {
     * in [XMPP‑IM] and opt-in data feeds for XMPP publish-subscribe as defined in [XEP‑0060]);
     * the associated error type SHOULD be "auth".
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class SubscriptionRequired(
-                                         override val reason: Option[Throwable] = None,
-                                         override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Auth,
-                                         override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class SubscriptionRequired(internals: Internals = Internals(XmppStanzaErrorType.Auth))
+    extends XmppStanzaErrorBase[SubscriptionRequired] {
     def definedCondition = XmppStanzaError.conditions.subscriptionRequired
-    def withText(t: String): SubscriptionRequired = withText(Some(t))
-    def withText(t: Option[String]): SubscriptionRequired = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -547,17 +453,11 @@ object XmppStanzaError {
     * any error type can be associated with this condition, and it SHOULD NOT be used except
     * in conjunction with an application-specific condition.
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class UndefinedCondition(
-                                       override val reason: Option[Throwable] = None,
-                                       override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Cancel,
-                                       override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class UndefinedCondition(internals: Internals = Internals(XmppStanzaErrorType.Cancel))
+    extends XmppStanzaErrorBase[UndefinedCondition] {
     def definedCondition = XmppStanzaError.conditions.undefinedCondition
-    def withText(t: String): UndefinedCondition = withText(Some(t))
-    def withText(t: Option[String]): UndefinedCondition = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
   /**
@@ -566,17 +466,11 @@ object XmppStanzaError {
     * The recipient or server understood the request but was not expecting it at this time
     * (e.g., the request was out of order); the associated error type SHOULD be "wait" or "modify".
     *
-    * @param reason    underlying exception
-    * @param errorType associated error-type
     */
-  final case class UnexpectedRequest(
-                                      override val reason: Option[Throwable] = None,
-                                      override val errorType: XmppStanzaErrorType = XmppStanzaErrorType.Wait,
-                                      override val text: Option[String] = None)
-    extends XmppStanzaError {
+  final case class UnexpectedRequest(internals: Internals = Internals(XmppStanzaErrorType.Wait))
+    extends XmppStanzaErrorBase[UnexpectedRequest] {
     def definedCondition = XmppStanzaError.conditions.unexpectedRequest
-    def withText(t: String): UnexpectedRequest = withText(Some(t))
-    def withText(t: Option[String]): UnexpectedRequest = copy(text = t)
+    override def withInternals(i: Internals) = copy(internals = i)
   }
 
 }

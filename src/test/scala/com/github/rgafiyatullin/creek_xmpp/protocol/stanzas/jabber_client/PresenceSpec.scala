@@ -21,22 +21,22 @@ class PresenceSpec extends FlatSpec with Matchers with XmlFromStringHelper {
     }
   }
 
-  "Presence.fromXml" should "return Some(presence)" in {
-    val somePresence = Presence.fromXml(xml("<presence xmlns='jabber:client' />"))
-    somePresence.isDefined should be (true)
-    val presence = somePresence.get
+  "Presence.fromXml" should "return Success(presence)" in {
+    val successPresence = Presence.fromXml(xml("<presence xmlns='jabber:client' />"))
+    successPresence.isSuccess should be (true)
+    val presence = successPresence.get
     presence should be (Presence(Element(XmppConstants.names.jabber.client.presence, Seq(
       Attribute.NsImport("", XmppConstants.names.jabber.client.ns)
     ), Seq())))
     presence.stanzaType should be (Presence.Available)
   }
 
-  it should "return None upon non-IQ FQN" in {
-    Presence.fromXml(xml("<presence xmlns='invalid' type='available' />")) should be (None)
+  it should "return Failure(...) upon non-IQ FQN" in {
+    Presence.fromXml(xml("<presence xmlns='invalid' type='available' />")).isFailure should be (true)
   }
 
-  it should "return None upon non-IQ type-attribute value" in {
-    Presence.fromXml(xml("<presence xmlns='jabber:client' type='invalid' />")) should be (None)
+  it should "return Failure(...) upon non-IQ type-attribute value" in {
+    Presence.fromXml(xml("<presence xmlns='jabber:client' type='invalid' />")).isFailure should be (true)
   }
 
   "Presence.create" should "#1" in {

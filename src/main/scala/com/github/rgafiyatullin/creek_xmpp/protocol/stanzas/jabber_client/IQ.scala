@@ -6,6 +6,8 @@ import com.github.rgafiyatullin.creek_xmpp.protocol.jid.Jid
 import com.github.rgafiyatullin.creek_xmpp.protocol.stanza.{Stanza, StanzaFromXml, StanzaType, StanzaTypeWithError}
 import com.github.rgafiyatullin.creek_xmpp.protocol.stanza_error.XmppStanzaError
 
+import scala.util.Try
+
 object IQ extends StanzaFromXml[IQ] {
   private val qn = XmppConstants.names.jabber.client.iq
 
@@ -24,7 +26,7 @@ object IQ extends StanzaFromXml[IQ] {
   case object Result extends Type { override val toString = "result" }
   case object Error extends Type { override val toString = "error" }
 
-  override def fromXml(xml: Node): Option[IQ] =
+  override def fromXml(xml: Node): Try[IQ] =
     validateXml(xml, IQ(xml))(
       qName = Some(qn),
       typeAttribute = Some(IQ.Type.fromString)

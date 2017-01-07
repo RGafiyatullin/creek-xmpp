@@ -9,7 +9,8 @@ class StanzaErrorSpec extends FlatSpec with Matchers {
     val reqIq = IQ.create(IQ.Get)
     for {
       respIq <- reqIq.responseError(
-        XmppStanzaError.RemoteServerTimeout(None, XmppStanzaErrorType.Continue)
+        XmppStanzaError.RemoteServerTimeout()
+          .withErrorType(XmppStanzaErrorType.Continue)
           .withText(expectedErrorText))
     } {
       val maybeStanzaError = XmppStanzaError.fromStanza(respIq)
@@ -17,7 +18,8 @@ class StanzaErrorSpec extends FlatSpec with Matchers {
       val stanzaError = maybeStanzaError.get
 
       stanzaError match {
-        case XmppStanzaError.RemoteServerTimeout(reason, errorType, text) =>
+        case e: XmppStanzaError.RemoteServerTimeout =>
+          val (reason, errorType, text) = (e.reason, e.errorType, e.text)
           errorType should be (XmppStanzaErrorType.Continue)
           text should be (Some(expectedErrorText))
       }
