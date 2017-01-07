@@ -11,7 +11,7 @@ object StanzaFromXml {
     expectedTypeAttr: Option[PartialFunction[Option[String], Any]],
     actualQN: QName,
     actualTypeAttr: Option[String]
-  ) extends Throwable
+  ) extends Exception
 }
 
 trait StanzaFromXml[StanzaType <: Stanza[StanzaType]] {

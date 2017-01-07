@@ -4,11 +4,10 @@ import com.github.rgafiyatullin.creek_xml.common.{Attribute, QName}
 import com.github.rgafiyatullin.creek_xml.dom.{CData, Element, Node}
 import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
 import com.github.rgafiyatullin.creek_xml.dom_query.Implicits._
-import com.github.rgafiyatullin.creek_xml.dom_query.Predicate
 import com.github.rgafiyatullin.creek_xmpp.protocol.stanza.Stanza
 import com.github.rgafiyatullin.creek_xmpp.protocol.stanza_error.XmppStanzaError.Internals
 
-sealed trait XmppStanzaError extends Throwable {
+sealed trait XmppStanzaError extends Exception {
   def definedCondition: String
 
   def errorType: XmppStanzaErrorType

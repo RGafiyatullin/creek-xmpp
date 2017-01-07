@@ -2,7 +2,7 @@ package com.github.rgafiyatullin.creek_xmpp.protocol.stream_error
 
 import com.github.rgafiyatullin.creek_xmpp.protocol.stream_error.XmppStreamError.Internals
 
-sealed trait XmppStreamError extends Throwable {
+sealed trait XmppStreamError extends Exception {
   def reason: Option[Throwable]
   def withReason(r: Throwable): XmppStreamError
   def withReason(ro: Option[Throwable]): XmppStreamError
