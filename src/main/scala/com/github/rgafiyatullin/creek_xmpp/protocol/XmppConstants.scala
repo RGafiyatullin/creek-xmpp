@@ -34,6 +34,11 @@ object XmppConstants {
 
               val text = qn(ns, "text")
             }
+            object xmppStreams {
+              val ns = "urn:ietf:params:xml:ns:xmpp-streams"
+
+              val text = qn(ns, "text")
+            }
           }
         }
       }

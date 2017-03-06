@@ -1,5 +1,8 @@
 package com.github.rgafiyatullin.creek_xmpp.protocol.stream_error
 
+import com.github.rgafiyatullin.creek_xml.common.QName
+import com.github.rgafiyatullin.creek_xml.dom.{CData, Element, Node}
+import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
 import com.github.rgafiyatullin.creek_xmpp.protocol.stream_error.XmppStreamError.Internals
 
 sealed trait XmppStreamError extends Exception {
@@ -16,6 +19,19 @@ sealed trait XmppStreamError extends Exception {
 
   override def toString: String =
     "XmppStreamError(%s): %s".format(definedCondition, reason)
+
+  def toXml: Node =
+    Element(
+      XmppConstants.names.streams.error,
+      Seq(),
+      Seq(
+        Element(
+          QName(XmppConstants.names.urn.ietf.params.xmlNs.xmppStreams.ns, definedCondition),
+          Seq(),
+          text.map {
+            str =>
+              Element(XmppConstants.names.urn.ietf.params.xmlNs.xmppStreams.text, Seq(), Seq(CData(str)))
+          }.toSeq)))
 }
 
 sealed trait XmppStreamErrorBase[T <: XmppStreamErrorBase[T]] extends XmppStreamError {
