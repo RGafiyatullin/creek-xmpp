@@ -4,8 +4,9 @@ import com.github.rgafiyatullin.creek_xmpp.protocol.stanzas.jabber_client.XmlFro
 import org.scalatest.{FlatSpec, Matchers}
 
 class FeaturesSpec extends FlatSpec with Matchers with XmlFromStringHelper {
-  "Features.fromXml" should "return Some(features)" in {
-    Features.fromXml(
+  "Features.fromXml" should "return Success(features)" in {
+    val someFeatures = Features.fromXml(
       xml("<features xmlns='http://etherx.jabber.org/streams'><starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/></features>"))
+    someFeatures.isSuccess should be (true)
   }
 }

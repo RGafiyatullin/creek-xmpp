@@ -16,6 +16,7 @@ class OutputStreamSpec extends FlatSpec with Matchers {
 
   "An OutputStream" should "process StreamOpen-event" in {
     streamOpen
+    ()
   }
 
 //  it should "process Stanza-event" in {

@@ -22,6 +22,9 @@ class StanzaErrorSpec extends FlatSpec with Matchers {
           val (reason, errorType, text) = (e.reason, e.errorType, e.text)
           errorType should be (XmppStanzaErrorType.Continue)
           text should be (Some(expectedErrorText))
+
+        case e =>
+          throw e
       }
     }
   }
