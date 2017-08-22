@@ -1,6 +1,6 @@
 name := "creek-xmpp"
 
-version := "0.3.6"
+version := "0.3.7"
 
 scalaVersion in ThisBuild := "2.11.8"
 
@@ -27,7 +27,7 @@ lazy val commonSettings = Seq()
 
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.2.6",
-  "com.github.rgafiyatullin" %% "creek-xml" % "0.1.8"
+  "com.github.rgafiyatullin" %% "creek-xml" % "0.1.9"
 )
 
 lazy val creekXmpp = Project("creek-xmpp", file("."))

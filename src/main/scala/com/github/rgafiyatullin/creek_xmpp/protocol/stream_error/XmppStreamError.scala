@@ -4,6 +4,8 @@ import com.github.rgafiyatullin.creek_xml.common.QName
 import com.github.rgafiyatullin.creek_xml.dom.{CData, Element, Node}
 import com.github.rgafiyatullin.creek_xmpp.protocol.XmppConstants
 import com.github.rgafiyatullin.creek_xmpp.protocol.stream_error.XmppStreamError.Internals
+import com.github.rgafiyatullin.creek_xml.dom_query.Implicits._
+import com.github.rgafiyatullin.creek_xml.dom_query.Predicate
 
 sealed trait XmppStreamError extends Exception {
   def reason: Option[Throwable]
@@ -48,6 +50,24 @@ sealed trait XmppStreamErrorBase[T <: XmppStreamErrorBase[T]] extends XmppStream
 }
 
 object XmppStreamError {
+  def fromStanza(stanzaNode: Node): Option[XmppStreamError] =
+    stanzaNode.qName match {
+      case XmppConstants.names.streams.error =>
+        for {
+          definedCondition <- (stanzaNode select Predicate.NsIs(XmppConstants.names.urn.ietf.params.xmlNs.xmppStreams.ns)).headOption
+          streamError <- XmppStreamError.fromDefinedCondition.lift(definedCondition.qName.localName)
+          textOption = (stanzaNode select
+            Predicate.NsIs(XmppConstants.names.urn.ietf.params.xmlNs.xmppStreams.ns) /
+              XmppConstants.names.urn.ietf.params.xmlNs.xmppStreams.text)
+            .headOption
+            .map(_.text)
+        }
+          yield streamError.withText(textOption)
+
+      case _ =>
+        None
+    }
+
   final case class Internals(reasonOption: Option[Throwable] = None, textOption: Option[String] = None)
 
 
