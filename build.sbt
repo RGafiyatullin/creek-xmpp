@@ -1,6 +1,6 @@
 name := "creek-xmpp"
 
-version := "0.3.5"
+version := "0.3.6"
 
 scalaVersion in ThisBuild := "2.11.8"
 
@@ -10,19 +10,18 @@ scalacOptions ++= Seq("-Ywarn-value-discard", "-Xfatal-warnings")
 
 organization := "com.github.rgafiyatullin"
 
-/*
 publishTo := {
-  val nexus = "http://am3-v-perftest-xmppcs-1.be.core.pw:8081/"
-  Some("releases"  at nexus + "content/repositories/sbt-releases/")
+  Some("releases"  at "https://artifactory.wgdp.io:443/xmppcs-maven-releases/")
 }
-credentials += Credentials(Path.userHome / ".ivy2" / ".credentials.am3")
-*/
+credentials += Credentials(Path.userHome / ".ivy2" / ".credentials.wg-domain")
 
+/*
 publishTo := {
   val nexus = "http://nexus.in-docker.localhost:8081/"
   Some("releases"  at nexus + "repository/my-releases")
 }
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials.local")
+*/
 
 lazy val commonSettings = Seq()
 

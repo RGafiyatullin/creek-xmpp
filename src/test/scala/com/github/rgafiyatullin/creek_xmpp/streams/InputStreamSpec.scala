@@ -202,4 +202,20 @@ class InputStreamSpec extends FlatSpec with Matchers {
       Attribute.NsImport("", "jabber:client")
     ))))
   }
+
+  it should "successfully parse <stream xmlns='http://etherx.jabber.org/streams'></stream>" in {
+    val hles = Seq(
+      HighLevelEvent.ElementOpen(ep, "", "stream", "http://etherx.jabber.org/streams", Seq(
+        Attribute.NsImport("", "http://etherx.jabber.org/streams")
+      )),
+      HighLevelEvent.ElementClose(ep, "", "stream", "http://etherx.jabber.org/streams")
+    )
+    val is0 = hles.foldLeft(InputStream.empty)(_.in(_))
+    val (events, is1) = is0.outAll
+
+    events should be (Seq(
+      StreamEvent.StreamOpen(Seq(Attribute.NsImport("", "http://etherx.jabber.org/streams"))),
+      StreamEvent.StreamClose()
+    ))
+  }
 }

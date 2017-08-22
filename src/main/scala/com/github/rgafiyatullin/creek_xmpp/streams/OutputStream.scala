@@ -12,7 +12,7 @@ object OutputStream {
     OutputStream(Queue.empty)
 }
 
-case class OutputStream(outputStash: Queue[HighLevelEvent]) {
+case class OutputStream(outputStash: Queue[HighLevelEvent], streamsNsPrefix: String = "") {
   private val emptyPosition: Position = Position.withoutPosition
 
   def out: (Queue[HighLevelEvent], OutputStream) = {
@@ -25,28 +25,29 @@ case class OutputStream(outputStash: Queue[HighLevelEvent]) {
         ???
 
       case StreamEvent.StreamOpen(attributes) =>
-        val attributesWithImport = attributes.find {
-          case Attribute.NsImport(_, XmppConstants.names.streams.ns) => true
-          case _ => false
-        } match {
-          case None =>
-            Seq(
-              Attribute.NsImport(
-                "", XmppConstants.names.streams.ns)
-            ) ++ attributes
-          case Some(_) =>
-            attributes
-        }
+        val streamsNsPrefixProvidedOption = attributes
+          .collectFirst { case Attribute.NsImport(p, XmppConstants.names.streams.ns) => p }
+        val streamsNsPrefixToUse = streamsNsPrefixProvidedOption.getOrElse("")
+        val attributesNsImportsAdjusted =
+          attributes
+            .filter(_ match {
+              case Attribute.NsImport(`streamsNsPrefixToUse`, _) => false
+              case _ => true
+            }) :+ Attribute.NsImport(streamsNsPrefixToUse, XmppConstants.names.streams.ns)
+
         val hleStreamOpen = HighLevelEvent.ElementOpen(
-          emptyPosition, "", "stream",
-          XmppConstants.names.streams.ns, attributesWithImport)
+          emptyPosition, streamsNsPrefixToUse, "stream",
+          XmppConstants.names.streams.ns, attributesNsImportsAdjusted)
         val nextWriter = HighLevelWriter.empty.in(hleStreamOpen)
-        copy(outputStash = outputStash.enqueue(hleStreamOpen))
+        copy(
+          outputStash = outputStash.enqueue(hleStreamOpen),
+          streamsNsPrefix = streamsNsPrefixToUse)
 
       case StreamEvent.StreamClose() =>
         val hleStreamClose = HighLevelEvent.ElementClose(
-          emptyPosition, "", "stream", XmppConstants.names.streams.ns)
-        copy(outputStash = outputStash.enqueue(hleStreamClose))
+          emptyPosition, streamsNsPrefix, "stream", XmppConstants.names.streams.ns)
+        copy(
+          outputStash = outputStash.enqueue(hleStreamClose))
 
       case StreamEvent.Stanza(stanzaXml) =>
         val stanzaHLEvents = stanzaXml.toEvents
