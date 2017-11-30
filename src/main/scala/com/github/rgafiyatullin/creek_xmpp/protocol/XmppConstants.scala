@@ -9,19 +9,19 @@ object XmppConstants {
     object streams {
       val ns = "http://etherx.jabber.org/streams"
 
-      val stream = qn(ns, "stream")
-      val features = qn(ns, "features")
-      val error = qn(ns, "error")
+      val stream: QName = qn(ns, "stream")
+      val features: QName = qn(ns, "features")
+      val error: QName = qn(ns, "error")
     }
 
     object jabber {
       object client {
         val ns = "jabber:client"
 
-        val error = qn(ns, "error")
-        val presence = qn(ns, "presence")
-        val iq = qn(ns, "iq")
-        val message = qn(ns, "message")
+        val error: QName = qn(ns, "error")
+        val presence: QName = qn(ns, "presence")
+        val iq: QName = qn(ns, "iq")
+        val message: QName = qn(ns, "message")
       }
     }
 
@@ -32,12 +32,17 @@ object XmppConstants {
             object xmppStanzas {
               val ns = "urn:ietf:params:xml:ns:xmpp-stanzas"
 
-              val text = qn(ns, "text")
+              val text: QName = qn(ns, "text")
             }
             object xmppStreams {
               val ns = "urn:ietf:params:xml:ns:xmpp-streams"
 
-              val text = qn(ns, "text")
+              val text: QName = qn(ns, "text")
+            }
+            object xmppBind {
+              val ns = "urn:ietf:params:xml:ns:xmpp-bind"
+
+              val bind: QName = qn(ns, "bind")
             }
           }
         }
@@ -47,7 +52,7 @@ object XmppConstants {
         object ping {
           val ns = "urn:xmpp:ping"
 
-          val ping = qn(ns, "ping")
+          val ping: QName = qn(ns, "ping")
         }
       }
     }
