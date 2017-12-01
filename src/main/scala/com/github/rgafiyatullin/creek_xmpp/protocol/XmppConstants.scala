@@ -44,6 +44,7 @@ object XmppConstants {
 
               val bind: QName = qn(ns, "bind")
               val jid: QName = qn(ns, "jid")
+              val resource: QName = qn(ns, "resource")
             }
           }
         }
