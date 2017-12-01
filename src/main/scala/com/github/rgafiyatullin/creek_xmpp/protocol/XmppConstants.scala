@@ -43,6 +43,7 @@ object XmppConstants {
               val ns = "urn:ietf:params:xml:ns:xmpp-bind"
 
               val bind: QName = qn(ns, "bind")
+              val jid: QName = qn(ns, "jid")
             }
           }
         }
