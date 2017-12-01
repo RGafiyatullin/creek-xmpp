@@ -15,6 +15,13 @@ object XmppConstants {
     }
 
     object jabber {
+      object iq {
+        object roster {
+          val ns = "jabber:iq:roster"
+          val query: QName = qn(ns, "query")
+          val item: QName = qn(ns, "item")
+        }
+      }
       object client {
         val ns = "jabber:client"
 
@@ -51,6 +58,15 @@ object XmppConstants {
       }
 
       object xmpp {
+        object blocking {
+          val ns = "urn:xmpp:blocking"
+
+          val blocklist: QName = qn(ns, "blocklist")
+          val block: QName = qn(ns, "block")
+          val unblock: QName = qn(ns, "unblock")
+          val item: QName = qn(ns, "item")
+        }
+
         object ping {
           val ns = "urn:xmpp:ping"
 
